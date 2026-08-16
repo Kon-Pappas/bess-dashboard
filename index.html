@@ -4,105 +4,110 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Greek BESS Monitor | ISP vs SCADA</title>
-    <!-- Tailwind CSS & Chart.js CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8">
 
-    <div class="max-w-6xl mx-auto space-y-6">
+    <div class="max-w-7xl mx-auto space-y-8">
         
         <!-- Header -->
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-700 pb-4 gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-emerald-400">Greek BESS Market Analytics</h1>
-                <p class="text-slate-400 text-sm">Σύγκριση Προγραμματισμού (ISP) vs Πραγματικής Εκτέλεσης (SCADA)</p>
+                <h1 class="text-3xl font-bold text-emerald-400">Greek BESS Market Analytics</h1>
+                <p class="text-slate-400 mt-1">Σύγκριση Προγραμματισμού (ISP) vs Πραγματικής Εκτέλεσης (SCADA)</p>
             </div>
-            <div class="flex items-center gap-3">
-                <label class="text-xs text-slate-400">Επιλογή Ημερομηνίας:</label>
-                <select id="dateSelect" onchange="updateDashboard()" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg p-2.5 focus:ring-emerald-500 focus:border-emerald-500">
+            <div class="flex items-center gap-3 bg-slate-800/50 p-3 rounded-xl border border-slate-700">
+                <label class="text-sm text-slate-300">Ημερομηνία:</label>
+                <select id="dateSelect" onchange="updateDashboard()" class="bg-slate-900 border border-slate-600 text-slate-200 text-sm rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
                     <option>Φόρτωση...</option>
                 </select>
             </div>
         </header>
 
-        <!-- KPI Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700">
-                <span class="text-xs text-slate-400">Συνολική Φόρτιση (Charge)</span>
-                <div class="flex justify-between items-end mt-2">
-                    <div>
-                        <span id="kpiChargeIsp" class="text-lg font-bold text-blue-400">0.00</span>
-                        <span class="text-xs text-slate-500"> MWh (ISP)</span>
-                    </div>
-                    <div>
-                        <span id="kpiChargeScada" class="text-lg font-bold text-emerald-400">0.00</span>
-                        <span class="text-xs text-slate-500"> MWh (SCADA)</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700">
-                <span class="text-xs text-slate-400">Συνολική Αποφόρτιση (Discharge)</span>
-                <div class="flex justify-between items-end mt-2">
-                    <div>
-                        <span id="kpiDischargeIsp" class="text-lg font-bold text-blue-400">0.00</span>
-                        <span class="text-xs text-slate-500"> MWh (ISP)</span>
-                    </div>
-                    <div>
-                        <span id="kpiDischargeScada" class="text-lg font-bold text-emerald-400">0.00</span>
-                        <span class="text-xs text-slate-500"> MWh (SCADA)</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700">
-                <span class="text-xs text-slate-400">Round Trip Efficiency (RTE - Total)</span>
-                <div class="flex justify-between items-end mt-2">
-                    <div>
-                        <span id="kpiRteIsp" class="text-lg font-bold text-blue-400">0.00%</span>
-                        <span class="text-xs text-slate-500"> (ISP)</span>
-                    </div>
-                    <div>
-                        <span id="kpiRteScada" class="text-lg font-bold text-emerald-400">0.00%</span>
-                        <span class="text-xs text-slate-500"> (SCADA)</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Charts Section (Δύο Γραφήματα πλέον) -->
-        <div class="grid grid-cols-1 gap-6">
-            
-            <!-- Discharge Chart -->
-            <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
+        <!-- SECTION: DISCHARGE -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Γράφημα Αποφόρτισης (Πιάνει 3 στήλες) -->
+            <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700">
                 <h2 class="text-lg font-semibold text-slate-200 mb-4">Αποφόρτιση (Discharge) Ανά Μονάδα BESS (MWh)</h2>
                 <div class="relative h-80">
                     <canvas id="dischargeChart"></canvas>
                 </div>
             </div>
+            
+            <!-- KPI Αποφόρτισης (Πιάνει 1 στήλη) -->
+            <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
+                <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider">Συνολικη Αποφορτιση</h3>
+                <div class="space-y-6">
+                    <div>
+                        <span class="block text-xs text-slate-500 mb-1">ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΣ (ISP)</span>
+                        <span id="kpiDischargeIsp" class="text-4xl font-bold text-blue-400">0.00</span>
+                        <span class="text-sm text-slate-500 block mt-1">MWh</span>
+                    </div>
+                    <div class="border-t border-slate-700 w-1/2 mx-auto"></div>
+                    <div>
+                        <span class="block text-xs text-slate-500 mb-1">ΠΡΑΓΜΑΤΙΚΗ (SCADA)</span>
+                        <span id="kpiDischargeScada" class="text-4xl font-bold text-emerald-400">0.00</span>
+                        <span class="text-sm text-slate-500 block mt-1">MWh</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            <!-- Charge Chart -->
-            <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
+        <!-- SECTION: CHARGE -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Γράφημα Φόρτισης (Πιάνει 3 στήλες) -->
+            <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700">
                 <h2 class="text-lg font-semibold text-slate-200 mb-4">Φόρτιση (Charge) Ανά Μονάδα BESS (MWh)</h2>
                 <div class="relative h-80">
                     <canvas id="chargeChart"></canvas>
                 </div>
             </div>
+            
+            <!-- KPI Φόρτισης (Πιάνει 1 στήλη) -->
+            <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
+                <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider">Συνολικη Φορτιση</h3>
+                <div class="space-y-6">
+                    <div>
+                        <span class="block text-xs text-slate-500 mb-1">ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΣ (ISP)</span>
+                        <span id="kpiChargeIsp" class="text-4xl font-bold text-purple-400">0.00</span>
+                        <span class="text-sm text-slate-500 block mt-1">MWh</span>
+                    </div>
+                    <div class="border-t border-slate-700 w-1/2 mx-auto"></div>
+                    <div>
+                        <span class="block text-xs text-slate-500 mb-1">ΠΡΑΓΜΑΤΙΚΗ (SCADA)</span>
+                        <span id="kpiChargeScada" class="text-4xl font-bold text-orange-400">0.00</span>
+                        <span class="text-sm text-slate-500 block mt-1">MWh</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- SECTION: RTE (Κεντραρισμένο στο κάτω μέρος) -->
+        <div class="max-w-2xl mx-auto bg-slate-800/60 p-6 rounded-xl border border-slate-700 text-center mt-4">
+            <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider">Round Trip Efficiency (RTE - Total BESS)</h3>
+            <div class="flex justify-around items-center">
+                <div>
+                    <span class="block text-xs text-slate-500 mb-1">ISP RTE</span>
+                    <span id="kpiRteIsp" class="text-3xl font-bold text-slate-200">0.00%</span>
+                </div>
+                <div class="h-12 w-px bg-slate-600"></div>
+                <div>
+                    <span class="block text-xs text-slate-500 mb-1">SCADA RTE</span>
+                    <span id="kpiRteScada" class="text-3xl font-bold text-emerald-400">0.00%</span>
+                </div>
+            </div>
         </div>
 
     </div>
 
     <script>
-        // ΒΑΛΕ ΕΔΩ ΤΟ WEB APP URL ΑΠΟ ΤΟ GOOGLE APPS SCRIPT
         const API_URL = "https://script.google.com/macros/s/AKfycbyZESmS6vPrmjQsa6ZfAsHFLhcL562KhyfS_39cEUcZJp3fA6li9iGZcnqOV-_346KS/exec";
 
         let rawData = { isp: [], scada: [] };
         let dischargeChartInst = null;
         let chargeChartInst = null;
 
-        // ΣΥΝΑΡΤΗΣΗ ΚΑΘΑΡΙΣΜΟΥ ΑΡΙΘΜΩΝ
         function parseNum(val) {
             if (val === null || val === undefined) return 0;
             if (typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -111,7 +116,6 @@
             return isNaN(n) ? 0 : n;
         }
 
-        // ΣΥΝΑΡΤΗΣΗ ΔΥΝΑΜΙΚΗΣ ΚΑΝΟΝΙΚΟΠΟΙΗΣΗΣ ΔΕΔΟΜΕΝΩΝ
         function normalizeData(dataArray) {
             if (!dataArray || dataArray.length === 0) return [];
             const sample = dataArray[0];
@@ -161,7 +165,7 @@
             const ispDay = rawData.isp.filter(d => d.date === selectedDate);
             const scadaDay = rawData.scada.filter(d => d.date === selectedDate);
 
-            // Ενημέρωση KPIs (TOTAL BESS)
+            // Ενημέρωση KPIs
             const ispTotal = ispDay.find(d => d.unit === "TOTAL BESS") || { charge: 0, discharge: 0, rte: "0.00%" };
             const scadaTotal = scadaDay.find(d => d.unit === "TOTAL BESS") || { charge: 0, discharge: 0, rte: "0.00%" };
 
@@ -172,9 +176,8 @@
             document.getElementById('kpiRteIsp').innerText = ispTotal.rte;
             document.getElementById('kpiRteScada').innerText = scadaTotal.rte;
 
-            // Λογική ταύτισης μονάδων
+            // Ομαδοποίηση μονάδων
             const unitMap = {};
-
             function getBaseUnitId(name) {
                 return name.toUpperCase().replace(/BZ\d+/g, '').replace(/_/g, '');
             }
@@ -184,7 +187,7 @@
                 const id = getBaseUnitId(d.unit);
                 if (!unitMap[id]) unitMap[id] = { display: d.unit.replace(/_BZ\d+_/g, '_'), ispDischarge: 0, scadaDischarge: 0, ispCharge: 0, scadaCharge: 0 };
                 unitMap[id].ispDischarge += d.discharge;
-                unitMap[id].ispCharge += d.charge; // Προσθήκη δεδομένων φόρτισης
+                unitMap[id].ispCharge += d.charge;
             });
 
             scadaDay.forEach(d => {
@@ -192,18 +195,15 @@
                 const id = getBaseUnitId(d.unit);
                 if (!unitMap[id]) unitMap[id] = { display: d.unit, ispDischarge: 0, scadaDischarge: 0, ispCharge: 0, scadaCharge: 0 };
                 unitMap[id].scadaDischarge += d.discharge;
-                unitMap[id].scadaCharge += d.charge; // Προσθήκη δεδομένων φόρτισης
+                unitMap[id].scadaCharge += d.charge;
                 unitMap[id].display = d.unit;
             });
 
             const units = Object.keys(unitMap).sort();
             const labels = units.map(u => unitMap[u].display);
             
-            // Δεδομένα Αποφόρτισης
             const ispDischarge = units.map(u => unitMap[u].ispDischarge);
             const scadaDischarge = units.map(u => unitMap[u].scadaDischarge);
-
-            // Δεδομένα Φόρτισης
             const ispCharge = units.map(u => unitMap[u].ispCharge);
             const scadaCharge = units.map(u => unitMap[u].scadaCharge);
 
@@ -211,26 +211,28 @@
         }
 
         function renderCharts(labels, ispDischarge, scadaDischarge, ispCharge, scadaCharge) {
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
             // -- ΓΡΑΦΗΜΑ ΑΠΟΦΟΡΤΙΣΗΣ --
             const ctxDischarge = document.getElementById('dischargeChart').getContext('2d');
             if (dischargeChartInst) dischargeChartInst.destroy();
-            
             dischargeChartInst = new Chart(ctxDischarge, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'ISP Αποφόρτιση (MWh)', data: ispDischarge, backgroundColor: '#60a5fa' },
-                        { label: 'SCADA Αποφόρτιση (MWh)', data: scadaDischarge, backgroundColor: '#34d399' }
+                        { label: 'ISP Αποφόρτιση (MWh)', data: ispDischarge, backgroundColor: '#60a5fa', borderRadius: 4 },
+                        { label: 'SCADA Αποφόρτιση (MWh)', data: scadaDischarge, backgroundColor: '#34d399', borderRadius: 4 }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                    plugins: { legend: { position: 'top' } },
                     scales: {
-                        x: { ticks: { color: '#94a3b8', autoSkip: false }, grid: { color: '#334155' } },
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                        x: { grid: { display: false } },
+                        y: { grid: { color: '#334155' } }
                     }
                 }
             });
@@ -238,23 +240,22 @@
             // -- ΓΡΑΦΗΜΑ ΦΟΡΤΙΣΗΣ --
             const ctxCharge = document.getElementById('chargeChart').getContext('2d');
             if (chargeChartInst) chargeChartInst.destroy();
-            
             chargeChartInst = new Chart(ctxCharge, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'ISP Φόρτιση (MWh)', data: ispCharge, backgroundColor: '#60a5fa' },
-                        { label: 'SCADA Φόρτιση (MWh)', data: scadaCharge, backgroundColor: '#34d399' }
+                        { label: 'ISP Φόρτιση (MWh)', data: ispCharge, backgroundColor: '#c084fc', borderRadius: 4 },
+                        { label: 'SCADA Φόρτιση (MWh)', data: scadaCharge, backgroundColor: '#fb923c', borderRadius: 4 }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                    plugins: { legend: { position: 'top' } },
                     scales: {
-                        x: { ticks: { color: '#94a3b8', autoSkip: false }, grid: { color: '#334155' } },
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                        x: { grid: { display: false } },
+                        y: { grid: { color: '#334155' } }
                     }
                 }
             });

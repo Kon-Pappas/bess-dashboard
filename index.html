@@ -2,49 +2,328 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <title>Daily Greek BESS Market Analytics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Daily Greek BESS Market Analytics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8">
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 flex flex-col justify-between">
 
-    <div class="max-w-7xl mx-auto space-y-8">
+    <div class="max-w-7xl mx-auto space-y-8 w-full">
+        
         <!-- Header -->
         <header class="border-b border-slate-700 pb-4">
-            <div class="flex justify-between items-center">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-emerald-400" id="title">Daily Greek BESS Market Analytics</h1>
-                    <p class="text-slate-400 text-sm italic" id="subtitle">Data source: IPTO (ADMIE) official ISP & SCADA files</p>
+                    <h1 class="text-3xl font-bold text-emerald-400" id="mainTitle">Daily Greek BESS Market Analytics</h1>
+                    <p class="text-slate-400 text-sm mt-1" id="dataSourceText">Data source: IPTO (ADMIE) official ISP & SCADA files</p>
                 </div>
-                <div class="flex gap-4">
-                    <button onclick="setLang('el')" class="font-bold text-sm hover:text-emerald-400">GR</button>
-                    <button onclick="setLang('en')" class="font-bold text-sm hover:text-emerald-400">EN</button>
-                    <select id="dateSelect" onchange="updateDashboard()" class="bg-slate-800 border border-slate-700 rounded p-1 text-sm outline-none"></select>
+                <div class="flex items-center gap-4">
+                    <div class="flex gap-2 bg-slate-800 border border-slate-700 rounded-lg p-1 text-xs font-bold">
+                        <button onclick="setLang('el')" id="btnGr" class="px-2 py-1 rounded bg-emerald-600 text-white transition">GR</button>
+                        <button onclick="setLang('en')" id="btnEn" class="px-2 py-1 rounded text-slate-400 hover:text-white transition">EN</button>
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
+                        <label class="text-xs text-slate-300" id="dateLabel">Ημερομηνία:</label>
+                        <select id="dateSelect" onchange="updateDashboard()" class="bg-slate-900 border border-slate-600 text-slate-200 text-sm rounded p-1 outline-none">
+                            <option>Φόρτωση...</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <!-- (Τα υπόλοιπα τμήματα παραμένουν ίδια με τα KPIs και Charts, αλλά με IDs για μετάφραση) -->
-        <!-- Θα προσθέσουμε το footer εδώ -->
-        <footer class="text-center text-slate-500 text-xs border-t border-slate-800 pt-6">
-            <p class="font-semibold">Konstantinos Pappas | Energy Market Analyst</p>
-            <p>Business Operations & Risk Management | Data Insights on Energy Transition & Grid Stability</p>
-        </footer>
+        <!-- SECTION: DISCHARGE -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700">
+                <h2 class="text-lg font-semibold text-slate-200 mb-4" id="dischargeTitle">Αποφόρτιση (Discharge) Ανά Μονάδα BESS (MWh)</h2>
+                <div class="relative h-80">
+                    <canvas id="dischargeChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
+                <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="totalDischargeLabel">Συνολικη Αποφορτιση</h3>
+                <div class="space-y-6">
+                    <div>
+                        <span class="block text-xs text-slate-500 mb-1">ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΣ (ISP)</span>
+                        <span id="kpiDischargeIsp" class="text-4xl font-bold text-blue-400">0.00</span>
+                        <span class="text-sm text-slate-500 block mt-1">MWh</span>
+                    </div>
+                    <div class="border-t border-slate-700 w-1/2 mx-auto"></div>
+                    <div>
+                        <span class="block text-xs text-slate-500 mb-1">ΠΡΑΓΜΑΤΙΚΗ (SCADA)</span>
+                        <span id="kpiDischargeScada" class="text-4xl font-bold text-emerald-400">0.00</span>
+                        <span class="text-sm text-slate-500 block mt-1">MWh</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: CHARGE -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700">
+                <h2 class="text-lg font-semibold text-slate-200 mb-4" id="chargeTitle">Φόρτιση (Charge) Ανά Μονάδα BESS (MWh)</h2>
+                <div class="relative h-80">
+                    <canvas id="chargeChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
+                <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="totalChargeLabel">Συνολικη Φορτιση</h3>
+                <div class="space-y-6">
+                    <div>
+                        <span class="block text-xs text-slate-500 mb-1">ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΣ (ISP)</span>
+                        <span id="kpiChargeIsp" class="text-4xl font-bold text-purple-400">0.00</span>
+                        <span class="text-sm text-slate-500 block mt-1">MWh</span>
+                    </div>
+                    <div class="border-t border-slate-700 w-1/2 mx-auto"></div>
+                    <div>
+                        <span class="block text-xs text-slate-500 mb-1">ΠΡΑΓΜΑΤΙΚΗ (SCADA)</span>
+                        <span id="kpiChargeScada" class="text-4xl font-bold text-orange-400">0.00</span>
+                        <span class="text-sm text-slate-500 block mt-1">MWh</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: RTE -->
+        <div class="max-w-2xl mx-auto bg-slate-800/60 p-6 rounded-xl border border-slate-700 text-center mt-4">
+            <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="rteLabel">Round Trip Efficiency (RTE - Total BESS)</h3>
+            <div class="flex justify-around items-center">
+                <div>
+                    <span class="block text-xs text-slate-500 mb-1">ISP RTE</span>
+                    <span id="kpiRteIsp" class="text-3xl font-bold text-slate-200">0.00%</span>
+                </div>
+                <div class="h-12 w-px bg-slate-600"></div>
+                <div>
+                    <span class="block text-xs text-slate-500 mb-1">SCADA RTE</span>
+                    <span id="kpiRteScada" class="text-3xl font-bold text-emerald-400">0.00%</span>
+                </div>
+            </div>
+        </div>
+
     </div>
 
+    <!-- Footer -->
+    <footer class="text-center text-slate-500 text-xs border-t border-slate-800 pt-6 mt-12 space-y-1">
+        <p class="font-semibold text-slate-400">Konstantinos Pappas | Energy Market Analyst</p>
+        <p>Business Operations & Risk Management | Data Insights on Energy Transition & Grid Stability</p>
+    </footer>
+
     <script>
-        const translations = {
-            el: { title: "Καθημερινή Ανάλυση Αγοράς BESS", subtitle: "Πηγή δεδομένων: Επίσημα αρχεία ISP & SCADA - ΑΔΜΗΕ", charge: "Συνολική Φόρτιση", discharge: "Συνολική Αποφόρτιση" },
-            en: { title: "Daily Greek BESS Market Analytics", subtitle: "Data source: IPTO (ADMIE) official ISP & SCADA files", charge: "Total Charge", discharge: "Total Discharge" }
+        const API_URL = "https://script.google.com/macros/s/AKfycbyZESmS6vPrmjQsa6ZfAsHFLhcL562KhyfS_39cEUcZJp3fA6li9iGZcnqOV-_346KS/exec";
+
+        let rawData = { isp: [], scada: [] };
+        let dischargeChartInst = null;
+        let chargeChartInst = null;
+        let currentLang = 'el';
+
+        const i18n = {
+            el: {
+                title: "Daily Greek BESS Market Analytics",
+                source: "Πηγή δεδομένων: Επίσημα αρχεία ISP & SCADA - ΑΔΜΗΕ (IPTO)",
+                dateLabel: "Ημερομηνία:",
+                dischargeTitle: "Αποφόρτιση (Discharge) Ανά Μονάδα BESS (MWh)",
+                totalDischarge: "Συνολική Αποφόρτιση",
+                chargeTitle: "Φόρτιση (Charge) Ανά Μονάδα BESS (MWh)",
+                totalCharge: "Συνολική Φόρτιση",
+                rte: "Round Trip Efficiency (RTE - Total BESS)",
+                ispDisp: "ISP Αποφόρτιση (MWh)",
+                scadaDisp: "SCADA Αποφόρτιση (MWh)",
+                ispChg: "ISP Φόρτιση (MWh)",
+                scadaChg: "SCADA Φόρτιση (MWh)"
+            },
+            en: {
+                title: "Daily Greek BESS Market Analytics",
+                source: "Data source: IPTO (ADMIE) official ISP & SCADA files",
+                dateLabel: "Date:",
+                dischargeTitle: "Discharge Per BESS Unit (MWh)",
+                totalDischarge: "Total Discharge",
+                chargeTitle: "Charge Per BESS Unit (MWh)",
+                totalCharge: "Total Charge",
+                rte: "Round Trip Efficiency (RTE - Total BESS)",
+                ispDisp: "ISP Discharge (MWh)",
+                scadaDisp: "SCADA Discharge (MWh)",
+                ispChg: "ISP Charge (MWh)",
+                scadaChg: "SCADA Charge (MWh)"
+            }
         };
 
         function setLang(lang) {
-            document.getElementById('title').innerText = translations[lang].title;
-            document.getElementById('subtitle').innerText = translations[lang].subtitle;
-            // ...εδώ προσθέτεις και τις υπόλοιπες μεταφράσεις...
+            currentLang = lang;
+            document.getElementById('mainTitle').innerText = i18n[lang].title;
+            document.getElementById('dataSourceText').innerText = i18n[lang].source;
+            document.getElementById('dateLabel').innerText = i18n[lang].dateLabel;
+            document.getElementById('dischargeTitle').innerText = i18n[lang].dischargeTitle;
+            document.getElementById('totalDischargeLabel').innerText = i18n[lang].totalDischarge;
+            document.getElementById('chargeTitle').innerText = i18n[lang].chargeTitle;
+            document.getElementById('totalChargeLabel').innerText = i18n[lang].totalCharge;
+            document.getElementById('rteLabel').innerText = i18n[lang].rte;
+
+            if(lang === 'el') {
+                document.getElementById('btnGr').className = "px-2 py-1 rounded bg-emerald-600 text-white transition";
+                document.getElementById('btnEn').className = "px-2 py-1 rounded text-slate-400 hover:text-white transition";
+            } else {
+                document.getElementById('btnEn').className = "px-2 py-1 rounded bg-emerald-600 text-white transition";
+                document.getElementById('btnGr').className = "px-2 py-1 rounded text-slate-400 hover:text-white transition";
+            }
+
+            updateDashboard();
         }
 
-        // Η υπόλοιπη λογική σου παραμένει ίδια...
+        function parseNum(val) {
+            if (val === null || val === undefined) return 0;
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
+            let str = String(val).trim().replace(',', '.').replace(/[^0-9.-]/g, '');
+            let n = parseFloat(str);
+            return isNaN(n) ? 0 : n;
+        }
+
+        function normalizeData(dataArray) {
+            if (!dataArray || dataArray.length === 0) return [];
+            const sample = dataArray[0];
+            const keys = Object.keys(sample);
+            
+            const dateKey = keys.find(k => k.includes("Ημερομηνία") || k.includes("Date")) || "Ημερομηνία";
+            const unitKey = keys.find(k => k.includes("Μονάδα") || k.includes("Unit")) || "Μονάδα BESS";
+            const chargeKey = keys.find(k => k.includes("Φόρτιση") && !k.includes("Αποφόρτιση")) || "Φόρτιση (MWh)";
+            const dischargeKey = keys.find(k => k.includes("Αποφόρτιση")) || "Αποφόρτιση (MWh)";
+            const rteKey = keys.find(k => k.includes("RTE")) || "RTE (%)";
+
+            return dataArray.map(d => ({
+                date: d[dateKey],
+                unit: String(d[unitKey] || "").trim(),
+                charge: parseNum(d[chargeKey]),
+                discharge: parseNum(d[dischargeKey]),
+                rte: d[rteKey] || "0.00%"
+            }));
+        }
+
+        async function init() {
+            try {
+                const res = await fetch(API_URL);
+                const json = await res.json();
+                
+                rawData.isp = normalizeData(json.isp);
+                rawData.scada = normalizeData(json.scada);
+                
+                const dates = [...new Set([
+                    ...rawData.isp.map(d => d.date),
+                    ...rawData.scada.map(d => d.date)
+                ])].filter(d => d).sort().reverse();
+
+                const select = document.getElementById('dateSelect');
+                select.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('');
+
+                updateDashboard();
+            } catch (err) {
+                alert("Σφάλμα κατά τη φόρτωση των δεδομένων: " + err.message);
+                console.error(err);
+            }
+        }
+
+        function updateDashboard() {
+            const selectedDate = document.getElementById('dateSelect').value;
+
+            const ispDay = rawData.isp.filter(d => d.date === selectedDate);
+            const scadaDay = rawData.scada.filter(d => d.date === selectedDate);
+
+            const ispTotal = ispDay.find(d => d.unit === "TOTAL BESS") || { charge: 0, discharge: 0, rte: "0.00%" };
+            const scadaTotal = scadaDay.find(d => d.unit === "TOTAL BESS") || { charge: 0, discharge: 0, rte: "0.00%" };
+
+            document.getElementById('kpiChargeIsp').innerText = ispTotal.charge.toFixed(2);
+            document.getElementById('kpiChargeScada').innerText = scadaTotal.charge.toFixed(2);
+            document.getElementById('kpiDischargeIsp').innerText = ispTotal.discharge.toFixed(2);
+            document.getElementById('kpiDischargeScada').innerText = scadaTotal.discharge.toFixed(2);
+            document.getElementById('kpiRteIsp').innerText = ispTotal.rte;
+            document.getElementById('kpiRteScada').innerText = scadaTotal.rte;
+
+            const unitMap = {};
+            function getBaseUnitId(name) {
+                return name.toUpperCase().replace(/BZ\d+/g, '').replace(/_/g, '');
+            }
+
+            ispDay.forEach(d => {
+                if (d.unit === "TOTAL BESS") return;
+                const id = getBaseUnitId(d.unit);
+                if (!unitMap[id]) unitMap[id] = { display: d.unit.replace(/_BZ\d+_/g, '_'), ispDischarge: 0, scadaDischarge: 0, ispCharge: 0, scadaCharge: 0 };
+                unitMap[id].ispDischarge += d.discharge;
+                unitMap[id].ispCharge += d.charge;
+            });
+
+            scadaDay.forEach(d => {
+                if (d.unit === "TOTAL BESS") return;
+                const id = getBaseUnitId(d.unit);
+                if (!unitMap[id]) unitMap[id] = { display: d.unit, ispDischarge: 0, scadaDischarge: 0, ispCharge: 0, scadaCharge: 0 };
+                unitMap[id].scadaDischarge += d.discharge;
+                unitMap[id].scadaCharge += d.charge;
+                unitMap[id].display = d.unit;
+            });
+
+            const units = Object.keys(unitMap).sort();
+            const labels = units.map(u => unitMap[u].display);
+            
+            const ispDischarge = units.map(u => unitMap[u].ispDischarge);
+            const scadaDischarge = units.map(u => unitMap[u].scadaDischarge);
+            const ispCharge = units.map(u => unitMap[u].ispCharge);
+            const scadaCharge = units.map(u => unitMap[u].scadaCharge);
+
+            renderCharts(labels, ispDischarge, scadaDischarge, ispCharge, scadaCharge);
+        }
+
+        function renderCharts(labels, ispDischarge, scadaDischarge, ispCharge, scadaCharge) {
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+            const t = i18n[currentLang];
+
+            const ctxDischarge = document.getElementById('dischargeChart').getContext('2d');
+            if (dischargeChartInst) dischargeChartInst.destroy();
+            dischargeChartInst = new Chart(ctxDischarge, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: t.ispDisp, data: ispDischarge, backgroundColor: '#60a5fa', borderRadius: 4 },
+                        { label: t.scadaDisp, data: scadaDischarge, backgroundColor: '#34d399', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: '#334155' } }
+                    }
+                }
+            });
+
+            const ctxCharge = document.getElementById('chargeChart').getContext('2d');
+            if (chargeChartInst) chargeChartInst.destroy();
+            chargeChartInst = new Chart(ctxCharge, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: t.ispChg, data: ispCharge, backgroundColor: '#c084fc', borderRadius: 4 },
+                        { label: t.scadaChg, data: scadaCharge, backgroundColor: '#fb923c', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: '#334155' } }
+                    }
+                }
+            });
+        }
+
+        init();
     </script>
 </body>
 </html>

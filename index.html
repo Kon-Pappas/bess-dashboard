@@ -165,5 +165,118 @@
 
         init();
     </script>
+    <script>
+        // ΒΑΛΕ ΕΔΩ ΤΟ WEB APP URL ΑΠΟ ΤΟ GOOGLE APPS SCRIPT
+        const API_URL = "https://script.google.com/macros/s/AKfycbyZESmS6vPrmjQsa6ZfAsHFLhcL562KhyfS_39cEUcZJp3fA6li9iGZcnqOV-_346KS/exec";
+
+        let rawData = { isp: [], scada: [] };
+        let chartInstance = null;
+
+        // ΣΥΝΑΡΤΗΣΗ ΚΑΘΑΡΙΣΜΟΥ ΑΡΙΘΜΩΝ (Διορθώνει το NaN)
+        function parseNum(val) {
+            if (val === null || val === undefined) return 0;
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
+            let str = String(val).trim().replace(',', '.').replace(/[^0-9.-]/g, '');
+            let n = parseFloat(str);
+            return isNaN(n) ? 0 : n;
+        }
+
+        // ΣΥΝΑΡΤΗΣΗ ΚΑΘΑΡΙΣΜΟΥ ΟΝΟΜΑΤΟΣ ΜΟΝΑΔΑΣ (Αφαιρεί το _BZ1_ κλπ)
+        function cleanUnitName(name) {
+            if (!name) return "";
+            return String(name).trim().replace(/_BZ\d+_/, '_');
+        }
+
+        async function init() {
+            try {
+                const res = await fetch(API_URL);
+                rawData = await res.json();
+                
+                // Εξαγωγή μοναδικών ημερομηνιών
+                const dates = [...new Set([
+                    ...rawData.isp.map(d => d["Ημερομηνία"]),
+                    ...rawData.scada.map(d => d["Ημερομηνία"])
+                ])].sort().reverse();
+
+                const select = document.getElementById('dateSelect');
+                select.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('');
+
+                updateDashboard();
+            } catch (err) {
+                alert("Σφάλμα κατά τη φόρτωση των δεδομένων: " + err.message);
+            }
+        }
+
+        function updateDashboard() {
+            const selectedDate = document.getElementById('dateSelect').value;
+
+            const ispDay = rawData.isp.filter(d => d["Ημερομηνία"] === selectedDate);
+            const scadaDay = rawData.scada.filter(d => d["Ημερομηνία"] === selectedDate);
+
+            // Ενημέρωση KPIs (TOTAL BESS)
+            const ispTotal = ispDay.find(d => d["Μονάδα BESS"] === "TOTAL BESS") || {};
+            const scadaTotal = scadaDay.find(d => d["Μονάδα BESS"] === "TOTAL BESS") || {};
+
+            document.getElementById('kpiChargeIsp').innerText = parseNum(ispTotal["Φόρτιση (MWh)"]).toFixed(2);
+            document.getElementById('kpiChargeScada').innerText = parseNum(scadaTotal["Φόρτιση (MWh)"]).toFixed(2);
+            document.getElementById('kpiDischargeIsp').innerText = parseNum(ispTotal["Αποφόρτιση (MWh)"]).toFixed(2);
+            document.getElementById('kpiDischargeScada').innerText = parseNum(scadaTotal["Αποφόρτιση (MWh)"]).toFixed(2);
+            document.getElementById('kpiRteIsp').innerText = ispTotal["RTE (%)"] || "0.00%";
+            document.getElementById('kpiRteScada').innerText = scadaTotal["RTE (%)"] || "0.00%";
+
+            // Αντιστοίχιση μονάδων με καθαρισμένα ονόματα
+            const unitMap = {};
+
+            ispDay.forEach(d => {
+                const rawUnit = d["Μονάδα BESS"];
+                if (rawUnit === "TOTAL BESS") return;
+                const unit = cleanUnitName(rawUnit);
+                if (!unitMap[unit]) unitMap[unit] = { ispDischarge: 0, scadaDischarge: 0 };
+                unitMap[unit].ispDischarge += parseNum(d["Αποφόρτιση (MWh)"]);
+            });
+
+            scadaDay.forEach(d => {
+                const rawUnit = d["Μονάδα BESS"];
+                if (rawUnit === "TOTAL BESS") return;
+                const unit = cleanUnitName(rawUnit);
+                if (!unitMap[unit]) unitMap[unit] = { ispDischarge: 0, scadaDischarge: 0 };
+                unitMap[unit].scadaDischarge += parseNum(d["Αποφόρτιση (MWh)"]);
+            });
+
+            const units = Object.keys(unitMap).sort();
+            const ispDischarge = units.map(u => unitMap[u].ispDischarge);
+            const scadaDischarge = units.map(u => unitMap[u].scadaDischarge);
+
+            renderChart(units, ispDischarge, scadaDischarge);
+        }
+
+        function renderChart(labels, ispData, scadaData) {
+            const ctx = document.getElementById('bessChart').getContext('2d');
+            
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'ISP Αποφόρτιση (MWh)', data: ispData, backgroundColor: '#60a5fa' },
+                        { label: 'SCADA Αποφόρτιση (MWh)', data: scadaData, backgroundColor: '#34d399' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                    }
+                }
+            });
+        }
+
+        init();
+    </script>
 </body>
 </html>

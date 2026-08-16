@@ -71,12 +71,25 @@
             </div>
         </div>
 
-        <!-- Chart Section -->
-        <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
-            <h2 class="text-lg font-semibold text-slate-200 mb-4">Σύγκριση Ανά Μονάδα BESS (MWh)</h2>
-            <div class="relative h-80">
-                <canvas id="bessChart"></canvas>
+        <!-- Charts Section (Δύο Γραφήματα πλέον) -->
+        <div class="grid grid-cols-1 gap-6">
+            
+            <!-- Discharge Chart -->
+            <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
+                <h2 class="text-lg font-semibold text-slate-200 mb-4">Αποφόρτιση (Discharge) Ανά Μονάδα BESS (MWh)</h2>
+                <div class="relative h-80">
+                    <canvas id="dischargeChart"></canvas>
+                </div>
             </div>
+
+            <!-- Charge Chart -->
+            <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
+                <h2 class="text-lg font-semibold text-slate-200 mb-4">Φόρτιση (Charge) Ανά Μονάδα BESS (MWh)</h2>
+                <div class="relative h-80">
+                    <canvas id="chargeChart"></canvas>
+                </div>
+            </div>
+
         </div>
 
     </div>
@@ -86,7 +99,8 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbyZESmS6vPrmjQsa6ZfAsHFLhcL562KhyfS_39cEUcZJp3fA6li9iGZcnqOV-_346KS/exec";
 
         let rawData = { isp: [], scada: [] };
-        let chartInstance = null;
+        let dischargeChartInst = null;
+        let chargeChartInst = null;
 
         // ΣΥΝΑΡΤΗΣΗ ΚΑΘΑΡΙΣΜΟΥ ΑΡΙΘΜΩΝ
         function parseNum(val) {
@@ -97,13 +111,12 @@
             return isNaN(n) ? 0 : n;
         }
 
-        // ΣΥΝΑΡΤΗΣΗ ΔΥΝΑΜΙΚΗΣ ΚΑΝΟΝΙΚΟΠΟΙΗΣΗΣ ΔΕΔΟΜΕΝΩΝ (Αγνοεί κενά/τυπογραφικά στις στήλες)
+        // ΣΥΝΑΡΤΗΣΗ ΔΥΝΑΜΙΚΗΣ ΚΑΝΟΝΙΚΟΠΟΙΗΣΗΣ ΔΕΔΟΜΕΝΩΝ
         function normalizeData(dataArray) {
             if (!dataArray || dataArray.length === 0) return [];
             const sample = dataArray[0];
             const keys = Object.keys(sample);
             
-            // Βρίσκουμε τις στήλες δυναμικά ψάχνοντας λέξεις κλειδιά
             const dateKey = keys.find(k => k.includes("Ημερομηνία") || k.includes("Date")) || "Ημερομηνία";
             const unitKey = keys.find(k => k.includes("Μονάδα") || k.includes("Unit")) || "Μονάδα BESS";
             const chargeKey = keys.find(k => k.includes("Φόρτιση") && !k.includes("Αποφόρτιση")) || "Φόρτιση (MWh)";
@@ -124,7 +137,6 @@
                 const res = await fetch(API_URL);
                 const json = await res.json();
                 
-                // Περνάμε τα δεδομένα από το "φίλτρο" κανονικοποίησης
                 rawData.isp = normalizeData(json.isp);
                 rawData.scada = normalizeData(json.scada);
                 
@@ -160,7 +172,7 @@
             document.getElementById('kpiRteIsp').innerText = ispTotal.rte;
             document.getElementById('kpiRteScada').innerText = scadaTotal.rte;
 
-            // Λογική ταύτισης μονάδων (Αφαιρεί _BZ1_ και _ για να ταυτιστούν απόλυτα)
+            // Λογική ταύτισης μονάδων
             const unitMap = {};
 
             function getBaseUnitId(name) {
@@ -170,38 +182,70 @@
             ispDay.forEach(d => {
                 if (d.unit === "TOTAL BESS") return;
                 const id = getBaseUnitId(d.unit);
-                if (!unitMap[id]) unitMap[id] = { display: d.unit.replace(/_BZ\d+_/g, '_'), isp: 0, scada: 0 };
-                unitMap[id].isp += d.discharge;
+                if (!unitMap[id]) unitMap[id] = { display: d.unit.replace(/_BZ\d+_/g, '_'), ispDischarge: 0, scadaDischarge: 0, ispCharge: 0, scadaCharge: 0 };
+                unitMap[id].ispDischarge += d.discharge;
+                unitMap[id].ispCharge += d.charge; // Προσθήκη δεδομένων φόρτισης
             });
 
             scadaDay.forEach(d => {
                 if (d.unit === "TOTAL BESS") return;
                 const id = getBaseUnitId(d.unit);
-                if (!unitMap[id]) unitMap[id] = { display: d.unit, isp: 0, scada: 0 };
-                unitMap[id].scada += d.discharge;
-                unitMap[id].display = d.unit; // Κρατάμε το πιο "καθαρό" όνομα του SCADA για την ετικέτα
+                if (!unitMap[id]) unitMap[id] = { display: d.unit, ispDischarge: 0, scadaDischarge: 0, ispCharge: 0, scadaCharge: 0 };
+                unitMap[id].scadaDischarge += d.discharge;
+                unitMap[id].scadaCharge += d.charge; // Προσθήκη δεδομένων φόρτισης
+                unitMap[id].display = d.unit;
             });
 
             const units = Object.keys(unitMap).sort();
             const labels = units.map(u => unitMap[u].display);
-            const ispDischarge = units.map(u => unitMap[u].isp);
-            const scadaDischarge = units.map(u => unitMap[u].scada);
+            
+            // Δεδομένα Αποφόρτισης
+            const ispDischarge = units.map(u => unitMap[u].ispDischarge);
+            const scadaDischarge = units.map(u => unitMap[u].scadaDischarge);
 
-            renderChart(labels, ispDischarge, scadaDischarge);
+            // Δεδομένα Φόρτισης
+            const ispCharge = units.map(u => unitMap[u].ispCharge);
+            const scadaCharge = units.map(u => unitMap[u].scadaCharge);
+
+            renderCharts(labels, ispDischarge, scadaDischarge, ispCharge, scadaCharge);
         }
 
-        function renderChart(labels, ispData, scadaData) {
-            const ctx = document.getElementById('bessChart').getContext('2d');
+        function renderCharts(labels, ispDischarge, scadaDischarge, ispCharge, scadaCharge) {
+            // -- ΓΡΑΦΗΜΑ ΑΠΟΦΟΡΤΙΣΗΣ --
+            const ctxDischarge = document.getElementById('dischargeChart').getContext('2d');
+            if (dischargeChartInst) dischargeChartInst.destroy();
             
-            if (chartInstance) chartInstance.destroy();
-
-            chartInstance = new Chart(ctx, {
+            dischargeChartInst = new Chart(ctxDischarge, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'ISP Αποφόρτιση (MWh)', data: ispData, backgroundColor: '#60a5fa' },
-                        { label: 'SCADA Αποφόρτιση (MWh)', data: scadaData, backgroundColor: '#34d399' }
+                        { label: 'ISP Αποφόρτιση (MWh)', data: ispDischarge, backgroundColor: '#60a5fa' },
+                        { label: 'SCADA Αποφόρτιση (MWh)', data: scadaDischarge, backgroundColor: '#34d399' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', autoSkip: false }, grid: { color: '#334155' } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                    }
+                }
+            });
+
+            // -- ΓΡΑΦΗΜΑ ΦΟΡΤΙΣΗΣ --
+            const ctxCharge = document.getElementById('chargeChart').getContext('2d');
+            if (chargeChartInst) chargeChartInst.destroy();
+            
+            chargeChartInst = new Chart(ctxCharge, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'ISP Φόρτιση (MWh)', data: ispCharge, backgroundColor: '#60a5fa' },
+                        { label: 'SCADA Φόρτιση (MWh)', data: scadaCharge, backgroundColor: '#34d399' }
                     ]
                 },
                 options: {

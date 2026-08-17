@@ -7,6 +7,7 @@ const i18n = {
     el: {
         title: "Greek BESS Market Analytics",
         source: "Πηγή δεδομένων: Επίσημα αρχεία ISP & SCADA - ΑΔΜΗΕ (IPTO)",
+        scopeTooltip: "Αφορά αποκλειστικά τις μονάδες BESS στο Σύστημα Μεταφοράς (ΑΔΜΗΕ). Δεν περιλαμβάνονται τα συστήματα στο Δίκτυο Διανομής (ΔΕΔΔΗΕ).",
         lastUpdate: "Τελευταία Ενημέρωση:",
         nextUpdate: "Επόμενη Ενημέρωση:",
         dateLabel: "Ημερομηνία:",
@@ -22,9 +23,9 @@ const i18n = {
         scadaDisp: "SCADA Αποφόρτιση (MWh)",
         ispChg: "ISP Φόρτιση (MWh)",
         scadaChg: "SCADA Φόρτιση (MWh)",
-        monthlyDischargeTitle: "Υποκατάσταση Φ. Αερίου (Αθροιστική Αποφόρτιση)",
+        monthlyDischargeTitle: "Πιθανή Υποκατάσταση Θερμικών Μονάδων (Λιγνήτης ή/και Φ. Αέριο) - (Αθροιστική Αποφόρτιση)",
         monthlyDischargeSub: "SCADA Data - Εξοικονόμηση θερμικής παραγωγής",
-        monthlyChargeTitle: "Αποφυγή Περικοπών ΑΠΕ (Αθροιστική Φόρτιση)",
+        monthlyChargeTitle: "Πιθανή Αποφυγή Περικοπών ΑΠΕ (Αθροιστική Φόρτιση)",
         monthlyChargeSub: "SCADA Data - Ενέργεια που αλλιώς θα περικόπτονταν (Curtailment)",
         kpiLabelAvoided: "Μηνιαια Αποφυγη",
         kpiLabelDisplaced: "Μηνιαια Υποκατασταση"
@@ -32,6 +33,7 @@ const i18n = {
     en: {
         title: "Greek BESS Market Analytics",
         source: "Data source: IPTO (ADMIE) official ISP & SCADA files",
+        scopeTooltip: "Refers exclusively to BESS units connected to the Transmission System (IPTO/ADMIE). Excludes distributed systems on the Distribution Network (HEDNO).",
         lastUpdate: "Last Update:",
         nextUpdate: "Next Update:",
         dateLabel: "Date:",
@@ -47,9 +49,9 @@ const i18n = {
         scadaDisp: "SCADA Discharge (MWh)",
         ispChg: "ISP Charge (MWh)",
         scadaChg: "SCADA Charge (MWh)",
-        monthlyDischargeTitle: "Displaced Gas Generation (Cumulative Discharge)",
+        monthlyDischargeTitle: "Potential Displaced Thermal Generation (Lignite/Gas) - (Cumulative Discharge)",
         monthlyDischargeSub: "SCADA Data - Avoided Thermal Generation",
-        monthlyChargeTitle: "Avoided RES Curtailment (Cumulative Charge)",
+        monthlyChargeTitle: "Potential Avoided RES Curtailment (Cumulative Charge)",
         monthlyChargeSub: "SCADA Data - Energy saved from curtailment",
         kpiLabelAvoided: "Monthly Avoided",
         kpiLabelDisplaced: "Monthly Displaced"
@@ -62,6 +64,7 @@ function setLang(lang) {
     
     document.getElementById('mainTitle').innerText = t.title;
     document.getElementById('dataSourceText').innerText = t.source;
+    document.getElementById('scopeBadge').title = t.scopeTooltip;
     document.getElementById('lastUpdateLabel').innerText = t.lastUpdate;
     document.getElementById('nextUpdateLabel').innerText = t.nextUpdate;
     document.getElementById('dateLabel').innerText = t.dateLabel;
@@ -172,6 +175,9 @@ async function init() {
         rawData.isp = normalizeData(json.isp);
         rawData.scada = normalizeData(json.scada);
         
+        // Αρχικοποίηση tooltip κειμένου από το λεξικό
+        document.getElementById('scopeBadge').title = i18n[currentLang].scopeTooltip;
+
         const dates = [...new Set([
             ...rawData.isp.map(d => d.date),
             ...rawData.scada.map(d => d.date)

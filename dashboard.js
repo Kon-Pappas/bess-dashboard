@@ -5,7 +5,7 @@ let chargeChartInst = null;
 let monthlyDischargeChartInst = null;
 let monthlyChargeChartInst = null;
 
-// Helper: Μετατροπή σε GWh
+// Helper: Μετατροπή σε GWh για τα KPIs
 function formatGWh(mwh) {
     let gwh = mwh / 1000;
     return gwh < 1 ? gwh.toFixed(3) : gwh.toFixed(2);
@@ -31,9 +31,10 @@ function updateDashboard() {
     document.getElementById('kpiRteIsp').innerText = ispTotal.rte;
     document.getElementById('kpiRteScada').innerText = scadaTotal.rte;
 
-    // ... (τα υπόλοιπα παραμένουν ίδια)
     const unitMap = {};
-    function getBaseUnitId(name) { return name.toUpperCase().replace(/BZ\d+/g, '').replace(/_/g, ''); }
+    function getBaseUnitId(name) {
+        return name.toUpperCase().replace(/BZ\d+/g, '').replace(/_/g, '');
+    }
 
     ispDay.forEach(d => {
         if (d.unit === "TOTAL BESS") return;
@@ -54,21 +55,56 @@ function updateDashboard() {
 
     const units = Object.keys(unitMap).sort();
     const labels = units.map(u => unitMap[u].display);
-    renderDailyCharts(labels, units.map(u => u.ispDischarge), units.map(u => u.scadaDischarge), units.map(u => u.ispCharge), units.map(u => u.scadaCharge));
+    
+    // ΔΙΟΡΘΩΣΗ ΕΔΩ: Σωστή ανάκτηση των δεδομένων από το unitMap[u]
+    const ispDischarge = units.map(u => unitMap[u].ispDischarge);
+    const scadaDischarge = units.map(u => unitMap[u].scadaDischarge);
+    const ispCharge = units.map(u => unitMap[u].ispCharge);
+    const scadaCharge = units.map(u => unitMap[u].scadaCharge);
+
+    renderDailyCharts(labels, ispDischarge, scadaDischarge, ispCharge, scadaCharge);
 }
 
 function renderDailyCharts(labels, ispDischarge, scadaDischarge, ispCharge, scadaCharge) {
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     const t = i18n[currentLang];
-    // (Το renderDailyCharts παραμένει ίδιο με πριν)
-    // ...
-    // ΣΗΜΕΙΩΣΗ: Τα γραφήματα τα αφήνουμε σε MWh γιατί είναι πιο αναλυτικά για τις μονάδες!
+
     const ctxDischarge = document.getElementById('dischargeChart').getContext('2d');
     if (dischargeChartInst) dischargeChartInst.destroy();
-    dischargeChartInst = new Chart(ctxDischarge, { type: 'bar', data: { labels: labels, datasets: [{ label: t.ispDisp, data: ispDischarge, backgroundColor: '#60a5fa', borderRadius: 4 }, { label: t.scadaDisp, data: scadaDischarge, backgroundColor: '#34d399', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } } } });
+    dischargeChartInst = new Chart(ctxDischarge, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: t.ispDisp, data: ispDischarge, backgroundColor: '#60a5fa', borderRadius: 4 },
+                { label: t.scadaDisp, data: scadaDischarge, backgroundColor: '#34d399', borderRadius: 4 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top' } },
+            scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } }
+        }
+    });
 
     const ctxCharge = document.getElementById('chargeChart').getContext('2d');
     if (chargeChartInst) chargeChartInst.destroy();
-    chargeChartInst = new Chart(ctxCharge, { type: 'bar', data: { labels: labels, datasets: [{ label: t.ispChg, data: ispCharge, backgroundColor: '#c084fc', borderRadius: 4 }, { label: t.scadaChg, data: scadaCharge, backgroundColor: '#fb923c', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } } } });
+    chargeChartInst = new Chart(ctxCharge, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: t.ispChg, data: ispCharge, backgroundColor: '#c084fc', borderRadius: 4 },
+                { label: t.scadaChg, data: scadaCharge, backgroundColor: '#fb923c', borderRadius: 4 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top' } },
+            scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } }
+        }
+    });
 }
 
 // ==========================================
@@ -96,8 +132,8 @@ function updateMonthlyDashboard() {
         labels.push(`${parts[2]}/${parts[1]}`);
         cumCharge += dailyTotals[date].charge;
         cumDischarge += dailyTotals[date].discharge;
-        chargeData.push(cumCharge / 1000); // GWh
-        dischargeData.push(cumDischarge / 1000); // GWh
+        chargeData.push(cumCharge / 1000); 
+        dischargeData.push(cumDischarge / 1000); 
     });
 
     document.getElementById('kpiMonthlyCharge').innerText = formatGWh(cumCharge);
@@ -107,12 +143,33 @@ function updateMonthlyDashboard() {
 }
 
 function renderMonthlyCharts(labels, chargeData, dischargeData) {
-    // Τα γραφήματα στο Monthly είναι πλέον σε GWh
     const ctxDischarge = document.getElementById('monthlyDischargeChart').getContext('2d');
     if (monthlyDischargeChartInst) monthlyDischargeChartInst.destroy();
-    monthlyDischargeChartInst = new Chart(ctxDischarge, { type: 'line', data: { labels: labels, datasets: [{ label: 'GWh', data: dischargeData, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.2)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#34d399' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' }, title: { display: true, text: 'GWh' } } } } });
+    monthlyDischargeChartInst = new Chart(ctxDischarge, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{ label: 'GWh', data: dischargeData, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.2)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#34d399' }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' }, title: { display: true, text: 'GWh' } } }
+        }
+    });
 
     const ctxCharge = document.getElementById('monthlyChargeChart').getContext('2d');
     if (monthlyChargeChartInst) monthlyChargeChartInst.destroy();
-    monthlyChargeChartInst = new Chart(ctxCharge, { type: 'line', data: { labels: labels, datasets: [{ label: 'GWh', data: chargeData, borderColor: '#fb923c', backgroundColor: 'rgba(251, 146, 60, 0.2)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#fb923c' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' }, title: { display: true, text: 'GWh' } } } } });
+    monthlyChargeChartInst = new Chart(ctxCharge, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{ label: 'GWh', data: chargeData, borderColor: '#fb923c', backgroundColor: 'rgba(251, 146, 60, 0.2)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#fb923c' }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' }, title: { display: true, text: 'GWh' } } }
+        }
+    });
 }

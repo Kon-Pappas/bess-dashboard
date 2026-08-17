@@ -5,11 +5,14 @@ let currentLang = 'el';
 
 const i18n = {
     el: {
-        title: "Daily Greek BESS Market Analytics",
+        title: "Greek BESS Market Analytics",
         source: "Πηγή δεδομένων: Επίσημα αρχεία ISP & SCADA - ΑΔΜΗΕ (IPTO)",
         lastUpdate: "Τελευταία Ενημέρωση:",
         nextUpdate: "Επόμενη Ενημέρωση:",
         dateLabel: "Ημερομηνία:",
+        monthLabel: "Μήνας:",
+        tabDaily: "Ημερήσια Ανάλυση (Daily)",
+        tabMonthly: "Μηνιαίος Αντίκτυπος (Monthly Impact)",
         dischargeTitle: "Αποφόρτιση (Discharge) Ανά Μονάδα BESS (MWh)",
         totalDischarge: "Συνολική Αποφόρτιση",
         chargeTitle: "Φόρτιση (Charge) Ανά Μονάδα BESS (MWh)",
@@ -18,14 +21,23 @@ const i18n = {
         ispDisp: "ISP Αποφόρτιση (MWh)",
         scadaDisp: "SCADA Αποφόρτιση (MWh)",
         ispChg: "ISP Φόρτιση (MWh)",
-        scadaChg: "SCADA Φόρτιση (MWh)"
+        scadaChg: "SCADA Φόρτιση (MWh)",
+        monthlyDischargeTitle: "Υποκατάσταση Φ. Αερίου (Αθροιστική Αποφόρτιση)",
+        monthlyDischargeSub: "SCADA Data - Εξοικονόμηση θερμικής παραγωγής",
+        monthlyChargeTitle: "Αποφυγή Περικοπών ΑΠΕ (Αθροιστική Φόρτιση)",
+        monthlyChargeSub: "SCADA Data - Ενέργεια που αλλιώς θα περικόπτονταν (Curtailment)",
+        kpiLabelAvoided: "Μηνιαια Αποφυγη",
+        kpiLabelDisplaced: "Μηνιαια Υποκατασταση"
     },
     en: {
-        title: "Daily Greek BESS Market Analytics",
+        title: "Greek BESS Market Analytics",
         source: "Data source: IPTO (ADMIE) official ISP & SCADA files",
         lastUpdate: "Last Update:",
         nextUpdate: "Next Update:",
         dateLabel: "Date:",
+        monthLabel: "Month:",
+        tabDaily: "Daily Analytics",
+        tabMonthly: "Monthly Impact",
         dischargeTitle: "Discharge Per BESS Unit (MWh)",
         totalDischarge: "Total Discharge",
         chargeTitle: "Charge Per BESS Unit (MWh)",
@@ -34,22 +46,43 @@ const i18n = {
         ispDisp: "ISP Discharge (MWh)",
         scadaDisp: "SCADA Discharge (MWh)",
         ispChg: "ISP Charge (MWh)",
-        scadaChg: "SCADA Charge (MWh)"
+        scadaChg: "SCADA Charge (MWh)",
+        monthlyDischargeTitle: "Displaced Gas Generation (Cumulative Discharge)",
+        monthlyDischargeSub: "SCADA Data - Avoided Thermal Generation",
+        monthlyChargeTitle: "Avoided RES Curtailment (Cumulative Charge)",
+        monthlyChargeSub: "SCADA Data - Energy saved from curtailment",
+        kpiLabelAvoided: "Monthly Avoided",
+        kpiLabelDisplaced: "Monthly Displaced"
     }
 };
 
 function setLang(lang) {
     currentLang = lang;
-    document.getElementById('mainTitle').innerText = i18n[lang].title;
-    document.getElementById('dataSourceText').innerText = i18n[lang].source;
-    document.getElementById('lastUpdateLabel').innerText = i18n[lang].lastUpdate;
-    document.getElementById('nextUpdateLabel').innerText = i18n[lang].nextUpdate;
-    document.getElementById('dateLabel').innerText = i18n[lang].dateLabel;
-    document.getElementById('dischargeTitle').innerText = i18n[lang].dischargeTitle;
-    document.getElementById('totalDischargeLabel').innerText = i18n[lang].totalDischarge;
-    document.getElementById('chargeTitle').innerText = i18n[lang].chargeTitle;
-    document.getElementById('totalChargeLabel').innerText = i18n[lang].totalCharge;
-    document.getElementById('rteLabel').innerText = i18n[lang].rte;
+    const t = i18n[lang];
+    
+    document.getElementById('mainTitle').innerText = t.title;
+    document.getElementById('dataSourceText').innerText = t.source;
+    document.getElementById('lastUpdateLabel').innerText = t.lastUpdate;
+    document.getElementById('nextUpdateLabel').innerText = t.nextUpdate;
+    document.getElementById('dateLabel').innerText = t.dateLabel;
+    document.getElementById('monthLabel').innerText = t.monthLabel;
+    document.getElementById('tabBtnDaily').innerText = t.tabDaily;
+    document.getElementById('tabBtnMonthly').innerText = t.tabMonthly;
+    
+    // Daily View
+    document.getElementById('dischargeTitle').innerText = t.dischargeTitle;
+    document.getElementById('totalDischargeLabel').innerText = t.totalDischarge;
+    document.getElementById('chargeTitle').innerText = t.chargeTitle;
+    document.getElementById('totalChargeLabel').innerText = t.totalCharge;
+    document.getElementById('rteLabel').innerText = t.rte;
+
+    // Monthly View
+    document.getElementById('monthlyDischargeTitle').innerText = t.monthlyDischargeTitle;
+    document.getElementById('monthlyDischargeSub').innerText = t.monthlyDischargeSub;
+    document.getElementById('monthlyChargeTitle').innerText = t.monthlyChargeTitle;
+    document.getElementById('monthlyChargeSub').innerText = t.monthlyChargeSub;
+    document.getElementById('kpiLabelAvoided').innerText = t.kpiLabelAvoided;
+    document.getElementById('kpiLabelDisplaced').innerText = t.kpiLabelDisplaced;
 
     if(lang === 'el') {
         document.getElementById('btnGr').className = "px-2 py-1 rounded bg-emerald-600 text-white transition";
@@ -60,6 +93,28 @@ function setLang(lang) {
     }
 
     if (typeof updateDashboard === "function") updateDashboard();
+    if (typeof updateMonthlyDashboard === "function") updateMonthlyDashboard();
+}
+
+function switchTab(tabId) {
+    // Διαχείριση κλάσεων για ενεργό/ανενεργό tab
+    const btnDaily = document.getElementById('tabBtnDaily');
+    const btnMonthly = document.getElementById('tabBtnMonthly');
+    const viewDaily = document.getElementById('viewDaily');
+    const viewMonthly = document.getElementById('viewMonthly');
+
+    if (tabId === 'daily') {
+        btnDaily.className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition";
+        btnMonthly.className = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition";
+        viewDaily.classList.remove('hidden');
+        viewMonthly.classList.add('hidden');
+    } else {
+        btnMonthly.className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition";
+        btnDaily.className = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition";
+        viewMonthly.classList.remove('hidden');
+        viewDaily.classList.add('hidden');
+        if (typeof updateMonthlyDashboard === "function") updateMonthlyDashboard();
+    }
 }
 
 function parseNum(val) {
@@ -118,21 +173,29 @@ async function init() {
         rawData.isp = normalizeData(json.isp);
         rawData.scada = normalizeData(json.scada);
         
+        // Λίστα Ημερομηνιών για το Daily Tab
         const dates = [...new Set([
             ...rawData.isp.map(d => d.date),
             ...rawData.scada.map(d => d.date)
         ])].filter(d => d).sort().reverse();
+        
+        document.getElementById('dateSelect').innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('');
 
-        const select = document.getElementById('dateSelect');
-        select.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('');
+        // Λίστα Μηνών για το Monthly Tab (π.χ. "2026-08")
+        const months = [...new Set(dates.map(d => d.substring(0, 7)))].sort().reverse();
+        document.getElementById('monthSelect').innerHTML = months.map(m => {
+            const parts = m.split('-');
+            const display = `${parts[1]}/${parts[0]}`; // Εμφάνιση ως 08/2026
+            return `<option value="${m}">${display}</option>`;
+        }).join('');
 
         updateFreshness(dates);
         if (typeof updateDashboard === "function") updateDashboard();
+        if (typeof updateMonthlyDashboard === "function") updateMonthlyDashboard();
     } catch (err) {
         alert("Σφάλμα κατά τη φόρτωση των δεδομένων: " + err.message);
         console.error(err);
     }
 }
 
-// Έναρξη μόλις φορτώσει το αρχείο
 init();

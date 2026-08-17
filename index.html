@@ -15,7 +15,11 @@
         <header class="border-b border-slate-700 pb-4">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-emerald-400" id="mainTitle">Greek BESS Market Analytics</h1>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-3xl font-bold text-emerald-400" id="mainTitle">Greek BESS Market Analytics</h1>
+                        <!-- Tooltip για ΑΔΜΗΕ / ΔΕΔΔΗΕ -->
+                        <span id="scopeBadge" class="cursor-help text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded-full border border-slate-700 hover:border-emerald-500 transition" title="">[?]</span>
+                    </div>
                     <p class="text-slate-400 text-sm mt-1" id="dataSourceText">Data source: IPTO (ADMIE) official ISP & SCADA files</p>
                     <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
                         <div><span id="lastUpdateLabel">Τελευταία Ενημέρωση:</span> <strong id="lastUpdateVal" class="text-emerald-400">-</strong></div>
@@ -41,7 +45,6 @@
         <!-- VIEW: DAILY ANALYTICS -->
         <!-- ============================================== -->
         <div id="viewDaily" class="space-y-8 block">
-            <!-- Φίλτρο Ημερομηνίας -->
             <div class="flex justify-end">
                 <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
                     <label class="text-xs text-slate-300" id="dateLabel">Ημερομηνία:</label>
@@ -120,7 +123,6 @@
         <!-- VIEW: MONTHLY IMPACT -->
         <!-- ============================================== -->
         <div id="viewMonthly" class="space-y-8 hidden">
-            <!-- Φίλτρο Μήνα -->
             <div class="flex justify-end">
                 <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
                     <label class="text-xs text-slate-300" id="monthLabel">Μήνας:</label>
@@ -129,9 +131,9 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <!-- Υποκατάσταση Αερίου (Discharge) -->
+                <!-- Υποκατάσταση Θερμικών Μονάδων (Discharge) -->
                 <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700">
-                    <h2 class="text-lg font-semibold text-slate-200 mb-1" id="monthlyDischargeTitle">Υποκατάσταση Φ. Αερίου (Αθροιστική Αποφόρτιση)</h2>
+                    <h2 class="text-lg font-semibold text-slate-200 mb-1" id="monthlyDischargeTitle">Πιθανή Υποκατάσταση Θερμικών Μονάδων (Λιγνήτης ή/και Φ. Αέριο) - (Αθροιστική Αποφόρτιση)</h2>
                     <p class="text-xs text-slate-400 mb-4" id="monthlyDischargeSub">SCADA Data - Εξοικονόμηση θερμικής παραγωγής</p>
                     <div class="relative h-80"><canvas id="monthlyDischargeChart"></canvas></div>
                 </div>
@@ -142,9 +144,9 @@
                     <span class="text-sm text-slate-500 block mt-1">MWh</span>
                 </div>
 
-                <!-- Αποφυγή Περικοπών (Charge) -->
+                <!-- Αποφυγή Περικοπών ΑΠΕ (Charge) -->
                 <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700 mt-6 lg:mt-0">
-                    <h2 class="text-lg font-semibold text-slate-200 mb-1" id="monthlyChargeTitle">Αποφυγή Περικοπών ΑΠΕ (Αθροιστική Φόρτιση)</h2>
+                    <h2 class="text-lg font-semibold text-slate-200 mb-1" id="monthlyChargeTitle">Πιθανή Αποφυγή Περικοπών ΑΠΕ (Αθροιστική Φόρτιση)</h2>
                     <p class="text-xs text-slate-400 mb-4" id="monthlyChargeSub">SCADA Data - Ενέργεια που αλλιώς θα περικόπτονταν (Curtailment)</p>
                     <div class="relative h-80"><canvas id="monthlyChargeChart"></canvas></div>
                 </div>

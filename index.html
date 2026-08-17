@@ -17,7 +17,6 @@
                 <div>
                     <div class="flex items-center gap-3">
                         <h1 class="text-3xl font-bold text-emerald-400" id="mainTitle">Greek BESS Market Analytics</h1>
-                        <!-- Tooltip για ΑΔΜΗΕ / ΔΕΔΔΗΕ -->
                         <span id="scopeBadge" class="cursor-help text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded-full border border-slate-700 hover:border-emerald-500 transition" title="">[?]</span>
                     </div>
                     <p class="text-slate-400 text-sm mt-1" id="dataSourceText">Data source: IPTO (ADMIE) official ISP & SCADA files</p>
@@ -37,8 +36,8 @@
 
         <!-- TABS NAVIGATION -->
         <div class="flex space-x-6 border-b border-slate-800 pb-2">
-            <button id="tabBtnDaily" onclick="switchTab('daily')" class="text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition">Ημερήσια Ανάλυση (Daily)</button>
-            <button id="tabBtnMonthly" onclick="switchTab('monthly')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition">Μηνιαίος Αντίκτυπος (Monthly Impact)</button>
+            <button id="tabBtnDaily" onclick="switchTab('daily')" class="text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition">Ημερήσια Ανάλυση</button>
+            <button id="tabBtnMonthly" onclick="switchTab('monthly')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition">Μηνιαίος Αντίκτυπος</button>
         </div>
 
         <!-- ============================================== -->
@@ -63,13 +62,13 @@
                     <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="totalDischargeLabel">Συνολικη Αποφορτιση</h3>
                     <div class="space-y-6">
                         <div>
-                            <span class="block text-xs text-slate-500 mb-1">ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΣ (ISP)</span>
+                            <span class="block text-xs text-slate-500 mb-1" id="lblDispIsp">ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΣ (ISP)</span>
                             <span id="kpiDischargeIsp" class="text-4xl font-bold text-blue-400">0.00</span>
                             <span class="text-sm text-slate-500 block mt-1">GWh</span>
                         </div>
                         <div class="border-t border-slate-700 w-1/2 mx-auto"></div>
                         <div>
-                            <span class="block text-xs text-slate-500 mb-1">ΠΡΑΓΜΑΤΙΚΗ (SCADA)</span>
+                            <span class="block text-xs text-slate-500 mb-1" id="lblDispScada">ΠΡΑΓΜΑΤΙΚΗ (SCADA)</span>
                             <span id="kpiDischargeScada" class="text-4xl font-bold text-emerald-400">0.00</span>
                             <span class="text-sm text-slate-500 block mt-1">GWh</span>
                         </div>
@@ -88,13 +87,13 @@
                     <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="totalChargeLabel">Συνολικη Φορτιση</h3>
                     <div class="space-y-6">
                         <div>
-                            <span class="block text-xs text-slate-500 mb-1">ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΣ (ISP)</span>
+                            <span class="block text-xs text-slate-500 mb-1" id="lblChgIsp">ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΣ (ISP)</span>
                             <span id="kpiChargeIsp" class="text-4xl font-bold text-purple-400">0.00</span>
                             <span class="text-sm text-slate-500 block mt-1">GWh</span>
                         </div>
                         <div class="border-t border-slate-700 w-1/2 mx-auto"></div>
                         <div>
-                            <span class="block text-xs text-slate-500 mb-1">ΠΡΑΓΜΑΤΙΚΗ (SCADA)</span>
+                            <span class="block text-xs text-slate-500 mb-1" id="lblChgScada">ΠΡΑΓΜΑΤΙΚΗ (SCADA)</span>
                             <span id="kpiChargeScada" class="text-4xl font-bold text-orange-400">0.00</span>
                             <span class="text-sm text-slate-500 block mt-1">GWh</span>
                         </div>

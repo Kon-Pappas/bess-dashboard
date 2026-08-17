@@ -12,8 +12,8 @@ const i18n = {
         nextUpdate: "Επόμενη Ενημέρωση:",
         dateLabel: "Ημερομηνία:",
         monthLabel: "Μήνας:",
-        tabDaily: "Ημερήσια Ανάλυση (Daily)",
-        tabMonthly: "Μηνιαίος Αντίκτυπος (Monthly Impact)",
+        tabDaily: "Ημερήσια Ανάλυση",
+        tabMonthly: "Μηνιαίος Αντίκτυπος",
         dischargeTitle: "Αποφόρτιση (Discharge) Ανά Μονάδα BESS (MWh)",
         totalDischarge: "Συνολική Αποφόρτιση",
         chargeTitle: "Φόρτιση (Charge) Ανά Μονάδα BESS (MWh)",
@@ -23,6 +23,8 @@ const i18n = {
         scadaDisp: "SCADA Αποφόρτιση (MWh)",
         ispChg: "ISP Φόρτιση (MWh)",
         scadaChg: "SCADA Φόρτιση (MWh)",
+        schedIsp: "ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΣ (ISP)",
+        actScada: "ΠΡΑΓΜΑΤΙΚΗ (SCADA)",
         monthlyDischargeTitle: "Πιθανή Υποκατάσταση Θερμικών Μονάδων (Λιγνήτης ή/και Φ. Αέριο) - (Αθροιστική Αποφόρτιση)",
         monthlyDischargeSub: "SCADA Data - Εξοικονόμηση θερμικής παραγωγής",
         monthlyChargeTitle: "Πιθανή Αποφυγή Περικοπών ΑΠΕ (Αθροιστική Φόρτιση)",
@@ -49,6 +51,8 @@ const i18n = {
         scadaDisp: "SCADA Discharge (MWh)",
         ispChg: "ISP Charge (MWh)",
         scadaChg: "SCADA Charge (MWh)",
+        schedIsp: "SCHEDULED (ISP)",
+        actScada: "ACTUAL (SCADA)",
         monthlyDischargeTitle: "Potential Displaced Thermal Generation (Lignite/Gas) - (Cumulative Discharge)",
         monthlyDischargeSub: "SCADA Data - Avoided Thermal Generation",
         monthlyChargeTitle: "Potential Avoided RES Curtailment (Cumulative Charge)",
@@ -78,6 +82,10 @@ function setLang(lang) {
     document.getElementById('chargeTitle').innerText = t.chargeTitle;
     document.getElementById('totalChargeLabel').innerText = t.totalCharge;
     document.getElementById('rteLabel').innerText = t.rte;
+    document.getElementById('lblDispIsp').innerText = t.schedIsp;
+    document.getElementById('lblDispScada').innerText = t.actScada;
+    document.getElementById('lblChgIsp').innerText = t.schedIsp;
+    document.getElementById('lblChgScada').innerText = t.actScada;
 
     // Monthly View
     document.getElementById('monthlyDischargeTitle').innerText = t.monthlyDischargeTitle;
@@ -175,7 +183,6 @@ async function init() {
         rawData.isp = normalizeData(json.isp);
         rawData.scada = normalizeData(json.scada);
         
-        // Αρχικοποίηση tooltip κειμένου από το λεξικό
         document.getElementById('scopeBadge').title = i18n[currentLang].scopeTooltip;
 
         const dates = [...new Set([

@@ -97,7 +97,6 @@ function setLang(lang) {
 }
 
 function switchTab(tabId) {
-    // Διαχείριση κλάσεων για ενεργό/ανενεργό tab
     const btnDaily = document.getElementById('tabBtnDaily');
     const btnMonthly = document.getElementById('tabBtnMonthly');
     const viewDaily = document.getElementById('viewDaily');
@@ -173,7 +172,6 @@ async function init() {
         rawData.isp = normalizeData(json.isp);
         rawData.scada = normalizeData(json.scada);
         
-        // Λίστα Ημερομηνιών για το Daily Tab
         const dates = [...new Set([
             ...rawData.isp.map(d => d.date),
             ...rawData.scada.map(d => d.date)
@@ -181,11 +179,10 @@ async function init() {
         
         document.getElementById('dateSelect').innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('');
 
-        // Λίστα Μηνών για το Monthly Tab (π.χ. "2026-08")
         const months = [...new Set(dates.map(d => d.substring(0, 7)))].sort().reverse();
         document.getElementById('monthSelect').innerHTML = months.map(m => {
             const parts = m.split('-');
-            const display = `${parts[1]}/${parts[0]}`; // Εμφάνιση ως 08/2026
+            const display = `${parts[1]}/${parts[0]}`; 
             return `<option value="${m}">${display}</option>`;
         }).join('');
 

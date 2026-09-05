@@ -1,6 +1,7 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbyZESmS6vPrmjQsa6ZfAsHFLhcL562KhyfS_39cEUcZJp3fA6li9iGZcnqOV-_346KS/exec";
 
-let rawData = { isp: [], scada: [], surplus: [] };
+// Προστέθηκε το pump!
+let rawData = { isp: [], scada: [], surplus: [], pump: [] };
 let currentLang = 'el';
 
 const i18n = {
@@ -33,9 +34,9 @@ const i18n = {
         // Surplus Tab
         surplusStackedTitle: "Ημερήσιο Πλεόνασμα & Απορρόφηση Ευελιξίας (GWh)",
         surplusStackedSub: "Απόλυτες τιμές. Τις μέρες χωρίς κόκκινη μπάρα (Surplus = 0) η φόρτιση αφορά καθαρά λειτουργία αγοράς (arbitrage).",
-        surplusBadgeTip: "Το % απορρόφησης υπολογίζεται επί του Θεωρητικού Αρχικού Πλεονάσματος (Surplus + BESS Charge)",
-        surplusCumulativeTitle: "Αθροιστική Εξέλιξη (Cumulative BESS vs Surplus)",
-        surplusCumulativeSub: "Σύγκριση της αθροιστικής φόρτισης SCADA με το αθροιστικό υπολειπόμενο ISP Surplus"
+        surplusBadgeTip: "Το % απορρόφησης υπολογίζεται επί του Θεωρητικού Αρχικού Πλεονάσματος (Surplus + BESS Charge + PUMP Charge)",
+        surplusCumulativeTitle: "Αθροιστική Εξέλιξη Ευελιξίας (Cumulative BESS & PUMP vs Surplus)",
+        surplusCumulativeSub: "Σύγκριση της αθροιστικής φόρτισης SCADA (Μπαταρίες + Αντλησιοταμίευση) με το αθροιστικό υπολειπόμενο ISP Surplus"
     },
     en: {
         title: "Greek BESS Market Analytics",
@@ -66,9 +67,9 @@ const i18n = {
         // Surplus Tab
         surplusStackedTitle: "Daily Energy Surplus & Flexibility Absorption (GWh)",
         surplusStackedSub: "Absolute values. Days with no red bar (Surplus = 0) indicate purely market-driven arbitrage charging.",
-        surplusBadgeTip: "Absorption % is calculated on the Theoretical Initial Surplus (ISP Surplus + BESS Charge)",
-        surplusCumulativeTitle: "Cumulative Evolution (BESS vs Surplus)",
-        surplusCumulativeSub: "Comparison of cumulative SCADA charging vs cumulative residual ISP Surplus"
+        surplusBadgeTip: "Absorption % is calculated on the Theoretical Initial Surplus (ISP Surplus + BESS + PUMP)",
+        surplusCumulativeTitle: "Cumulative Flexibility Evolution (BESS & PUMP vs Surplus)",
+        surplusCumulativeSub: "Comparison of cumulative SCADA charging (Batteries + Pumped Hydro) vs cumulative residual ISP Surplus"
     }
 };
 
@@ -202,13 +203,24 @@ async function init() {
         rawData.isp = normalizeData(json.isp);
         rawData.scada = normalizeData(json.scada);
         
-        // Ομαλοποίηση του νέου JSON array (Surplus)
+        // Ομαλοποίηση Surplus
         if (json.surplus) {
             rawData.surplus = json.surplus.map(d => {
                 const keys = Object.keys(d);
                 return {
                     date: d[keys.find(k => k.includes("Ημερομηνία") || k.includes("Date"))],
                     val: parseNum(d[keys.find(k => k.includes("Surplus"))])
+                };
+            });
+        }
+
+        // Ομαλοποίηση Pump
+        if (json.pump) {
+            rawData.pump = json.pump.map(d => {
+                const keys = Object.keys(d);
+                return {
+                    date: d[keys.find(k => k.includes("Ημερομηνία") || k.includes("Date"))],
+                    val: parseNum(d[keys.find(k => k.includes("Pump"))])
                 };
             });
         }

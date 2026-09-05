@@ -124,7 +124,6 @@ function updateSurplusDashboard() {
     const selectedMonth = document.getElementById('monthSelectSurplus').value;
     if (!selectedMonth || !rawData.surplus) return;
 
-    // SCADA (για φόρτιση)
     const monthScada = rawData.scada.filter(d => d.date.startsWith(selectedMonth));
     const scadaTotals = {};
     monthScada.forEach(d => {
@@ -133,12 +132,10 @@ function updateSurplusDashboard() {
         scadaTotals[d.date] += d.charge;
     });
 
-    // SURPLUS 
     const monthSurplus = rawData.surplus.filter(d => d.date.startsWith(selectedMonth));
     const surpTotals = {};
     monthSurplus.forEach(d => { surpTotals[d.date] = d.val; });
 
-    // Ένωση όλων των ημερομηνιών
     const allDates = [...new Set([...Object.keys(scadaTotals), ...Object.keys(surpTotals)])].sort();
     
     const labels = [];
@@ -155,7 +152,8 @@ function updateSurplusDashboard() {
         labels.push(`${parts[2]}/${parts[1]}`);
 
         let bessDay = (scadaTotals[date] || 0) / 1000;
-        let surpDay = (surpTotals[date] || 0) / 1000;
+        // ΔΙΟΡΘΩΣΗ: Μετατροπή του Surplus σε απόλυτη (θετική) τιμή
+        let surpDay = Math.abs(surpTotals[date] || 0) / 1000;
         
         dailyBessGWh.push(bessDay);
         dailySurpGWh.push(surpDay);
@@ -170,7 +168,6 @@ function updateSurplusDashboard() {
 }
 
 function renderSurplusCharts(labels, dailyBess, dailySurplus, cumBess, cumSurplus) {
-    // 1. Stacked Bar Chart
     const ctxStacked = document.getElementById('surplusStackedChart').getContext('2d');
     if (surplusStackedChartInst) surplusStackedChartInst.destroy();
     
@@ -180,7 +177,6 @@ function renderSurplusCharts(labels, dailyBess, dailySurplus, cumBess, cumSurplu
             labels: labels,
             datasets: [
                 { label: 'BESS Charge (SCADA)', data: dailyBess, backgroundColor: '#34d399', stack: 'Stack 0' },
-                // Μετά θα προστεθεί το PUMP ως 2ο Dataset εδώ
                 { label: 'Residual Surplus (ISP)', data: dailySurplus, backgroundColor: '#ef4444', stack: 'Stack 0' }
             ]
         },
@@ -196,6 +192,7 @@ function renderSurplusCharts(labels, dailyBess, dailySurplus, cumBess, cumSurplu
                             let surp = dailySurplus[idx];
                             if (surp === 0) return "Zero ISP Surplus - Καθαρή λειτουργία Market Arbitrage";
                             
+                            // Ο υπολογισμός λειτουργεί πλέον σωστά (και τα δύο είναι θετικά)
                             let total = bess + surp;
                             let pct = ((bess / total) * 100).toFixed(1);
                             return `\n💡 Τα BESS απορρόφησαν το ${pct}% \nτου Θεωρητικού Αρχικού Πλεονάσματος.`;
@@ -210,7 +207,6 @@ function renderSurplusCharts(labels, dailyBess, dailySurplus, cumBess, cumSurplu
         }
     });
 
-    // 2. Cumulative Line Chart
     const ctxCum = document.getElementById('surplusCumulativeChart').getContext('2d');
     if (surplusCumulativeChartInst) surplusCumulativeChartInst.destroy();
     

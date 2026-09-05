@@ -163,7 +163,7 @@ function updateSurplusDashboard() {
 
         let bessDay = (scadaTotals[date] || 0) / 1000;
         let pumpDay = (pumpTotals[date] || 0) / 1000;
-        let surpDay = Math.abs(surpTotals[date] || 0) / 1000; // Απόλυτη τιμή
+        let surpDay = Math.abs(surpTotals[date] || 0) / 1000;
         
         dailyBessGWh.push(bessDay);
         dailyPumpGWh.push(pumpDay);
@@ -182,9 +182,6 @@ function updateSurplusDashboard() {
 }
 
 function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess, cumPump, cumSurplus) {
-    const t = i18n[currentLang];
-    
-    // 1. Stacked Bar Chart (BESS + PUMP + SURPLUS)
     const ctxStacked = document.getElementById('surplusStackedChart').getContext('2d');
     if (surplusStackedChartInst) surplusStackedChartInst.destroy();
     
@@ -194,7 +191,7 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
             labels: labels,
             datasets: [
                 { label: 'BESS Charge (SCADA)', data: dailyBess, backgroundColor: '#34d399', stack: 'Stack 0' },
-                { label: 'PUMP Charge (SCADA)', data: dailyPump, backgroundColor: '#3b82f6', stack: 'Stack 0' }, // Μπλε Αντλησιοταμίευση
+                { label: 'PUMP Charge (SCADA)', data: dailyPump, backgroundColor: '#3b82f6', stack: 'Stack 0' },
                 { label: 'Residual Surplus (ISP)', data: dailySurplus, backgroundColor: '#ef4444', stack: 'Stack 0' }
             ]
         },
@@ -210,7 +207,12 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
                             let pump = dailyPump[idx];
                             let surp = dailySurplus[idx];
                             
-                            if (surp === 0) return "Zero ISP Surplus\nΚαθαρή λειτουργία Market Arbitrage.";
+                            // Προσθήκη ελέγχου γλώσσας και βελτίωσης λεκτικού για Surplus = 0
+                            if (surp === 0) {
+                                return (currentLang === 'el') 
+                                    ? "Zero ISP Surplus\nΠιθανή καθαρή λειτουργία Market Arbitrage." 
+                                    : "Zero ISP Surplus\nPotential pure Market Arbitrage operation.";
+                            }
                             
                             let total = bess + pump + surp;
                             let pctBess = ((bess / total) * 100).toFixed(1);
@@ -233,7 +235,6 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
         }
     });
 
-    // 2. Cumulative Line Chart (BESS vs PUMP vs SURPLUS)
     const ctxCum = document.getElementById('surplusCumulativeChart').getContext('2d');
     if (surplusCumulativeChartInst) surplusCumulativeChartInst.destroy();
     

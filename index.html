@@ -35,13 +35,14 @@
         </header>
 
         <!-- TABS NAVIGATION -->
-        <div class="flex space-x-6 border-b border-slate-800 pb-2">
-            <button id="tabBtnDaily" onclick="switchTab('daily')" class="text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition">Ημερήσια Ανάλυση</button>
-            <button id="tabBtnMonthly" onclick="switchTab('monthly')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition">Μηνιαίος Αντίκτυπος</button>
+        <div class="flex space-x-6 border-b border-slate-800 pb-2 overflow-x-auto">
+            <button id="tabBtnDaily" onclick="switchTab('daily')" class="text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap">Ημερήσια Ανάλυση</button>
+            <button id="tabBtnMonthly" onclick="switchTab('monthly')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap">Μηνιαίος Αντίκτυπος</button>
+            <button id="tabBtnSurplus" onclick="switchTab('surplus')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap">Πλεόνασμα & Ευελιξία</button>
         </div>
 
         <!-- ============================================== -->
-        <!-- VIEW: DAILY ANALYTICS -->
+        <!-- VIEW 1: DAILY ANALYTICS -->
         <!-- ============================================== -->
         <div id="viewDaily" class="space-y-8 block">
             <div class="flex justify-end">
@@ -51,13 +52,11 @@
                 </div>
             </div>
 
-            <!-- SECTION: DISCHARGE -->
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700">
                     <h2 class="text-lg font-semibold text-slate-200 mb-4" id="dischargeTitle">Αποφόρτιση (Discharge) Ανά Μονάδα BESS (MWh)</h2>
                     <div class="relative h-80"><canvas id="dischargeChart"></canvas></div>
                 </div>
-                
                 <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
                     <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="totalDischargeLabel">Συνολικη Αποφορτιση</h3>
                     <div class="space-y-6">
@@ -76,13 +75,11 @@
                 </div>
             </div>
 
-            <!-- SECTION: CHARGE -->
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700">
                     <h2 class="text-lg font-semibold text-slate-200 mb-4" id="chargeTitle">Φόρτιση (Charge) Ανά Μονάδα BESS (MWh)</h2>
                     <div class="relative h-80"><canvas id="chargeChart"></canvas></div>
                 </div>
-                
                 <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
                     <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="totalChargeLabel">Συνολικη Φορτιση</h3>
                     <div class="space-y-6">
@@ -101,7 +98,6 @@
                 </div>
             </div>
 
-            <!-- SECTION: RTE -->
             <div class="max-w-2xl mx-auto bg-slate-800/60 p-6 rounded-xl border border-slate-700 text-center mt-4">
                 <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="rteLabel">Round Trip Efficiency (RTE - Total BESS)</h3>
                 <div class="flex justify-around items-center">
@@ -119,7 +115,7 @@
         </div>
 
         <!-- ============================================== -->
-        <!-- VIEW: MONTHLY IMPACT -->
+        <!-- VIEW 2: MONTHLY IMPACT -->
         <!-- ============================================== -->
         <div id="viewMonthly" class="space-y-8 hidden">
             <div class="flex justify-end">
@@ -130,31 +126,56 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <!-- Υποκατάσταση Θερμικών Μονάδων (Discharge) -->
                 <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700">
                     <h2 class="text-lg font-semibold text-slate-200 mb-1" id="monthlyDischargeTitle">Πιθανή Υποκατάσταση Θερμικών Μονάδων (Λιγνήτης ή/και Φ. Αέριο) - (Αθροιστική Αποφόρτιση)</h2>
                     <p class="text-xs text-slate-400 mb-4" id="monthlyDischargeSub">SCADA Data - Εξοικονόμηση θερμικής παραγωγής</p>
                     <div class="relative h-80"><canvas id="monthlyDischargeChart"></canvas></div>
                 </div>
-                
                 <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
                     <h3 class="text-sm font-medium text-slate-400 mb-4 uppercase tracking-wider" id="kpiLabelDisplaced">Μηνιαια Υποκατασταση</h3>
                     <span id="kpiMonthlyDischarge" class="text-4xl font-bold text-emerald-400">0.00</span>
                     <span class="text-sm text-slate-500 block mt-1">GWh</span>
                 </div>
 
-                <!-- Αποφυγή Περικοπών ΑΠΕ (Charge) -->
                 <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700 mt-6 lg:mt-0">
                     <h2 class="text-lg font-semibold text-slate-200 mb-1" id="monthlyChargeTitle">Πιθανή Αποφυγή Περικοπών ΑΠΕ (Αθροιστική Φόρτιση)</h2>
                     <p class="text-xs text-slate-400 mb-4" id="monthlyChargeSub">SCADA Data - Ενέργεια που αλλιώς θα περικόπτονταν (Curtailment)</p>
                     <div class="relative h-80"><canvas id="monthlyChargeChart"></canvas></div>
                 </div>
-                
                 <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center mt-6 lg:mt-0">
                     <h3 class="text-sm font-medium text-slate-400 mb-4 uppercase tracking-wider" id="kpiLabelAvoided">Μηνιαια Αποφυγη</h3>
                     <span id="kpiMonthlyCharge" class="text-4xl font-bold text-orange-400">0.00</span>
                     <span class="text-sm text-slate-500 block mt-1">GWh</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- VIEW 3: SURPLUS & FLEXIBILITY -->
+        <!-- ============================================== -->
+        <div id="viewSurplus" class="space-y-8 hidden">
+            <div class="flex justify-end">
+                <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
+                    <label class="text-xs text-slate-300" id="monthLabelSurp">Μήνας:</label>
+                    <select id="monthSelectSurplus" onchange="updateSurplusDashboard()" class="bg-slate-900 border border-slate-600 text-slate-200 text-sm rounded p-1 outline-none"></select>
+                </div>
+            </div>
+
+            <!-- Absolute Stacked Bar Chart -->
+            <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
+                <div class="flex items-center gap-2 mb-1">
+                    <h2 class="text-lg font-semibold text-slate-200" id="surplusStackedTitle">Ημερήσιο Πλεόνασμα & Απορρόφηση Ευελιξίας (GWh)</h2>
+                    <span class="cursor-help text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded-full border border-slate-700 hover:border-emerald-500 transition" id="surplusBadge" title="Το % απορρόφησης υπολογίζεται επί του Θεωρητικού Αρχικού Πλεονάσματος (Surplus + BESS Charge)">[?]</span>
+                </div>
+                <p class="text-xs text-slate-400 mb-4" id="surplusStackedSub">Απόλυτες τιμές. Τις μέρες χωρίς κόκκινη μπάρα (Surplus = 0) η φόρτιση αφορά καθαρά λειτουργία αγοράς (arbitrage).</p>
+                <div class="relative h-96"><canvas id="surplusStackedChart"></canvas></div>
+            </div>
+
+            <!-- Cumulative Line Chart -->
+            <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
+                <h2 class="text-lg font-semibold text-slate-200 mb-1" id="surplusCumulativeTitle">Αθροιστική Εξέλιξη (Cumulative BESS vs Surplus)</h2>
+                <p class="text-xs text-slate-400 mb-4" id="surplusCumulativeSub">Σύγκριση της αθροιστικής φόρτισης SCADA με το αθροιστικό υπολειπόμενο ISP Surplus</p>
+                <div class="relative h-80"><canvas id="surplusCumulativeChart"></canvas></div>
             </div>
         </div>
 

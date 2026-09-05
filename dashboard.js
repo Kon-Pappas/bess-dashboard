@@ -61,8 +61,7 @@ function updateDashboard() {
 function renderDailyCharts(labels, ispDischarge, scadaDischarge, ispCharge, scadaCharge) {
     Chart.defaults.color = '#94a3b8';
     Chart.defaults.font.family = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    const t = i18n[currentLang];
-
+    
     const ctxDischarge = document.getElementById('dischargeChart').getContext('2d');
     if (dischargeChartInst) dischargeChartInst.destroy();
     dischargeChartInst = new Chart(ctxDischarge, { type: 'bar', data: { labels: labels, datasets: [{ label: 'ISP (MWh)', data: ispDischarge, backgroundColor: '#60a5fa', borderRadius: 4 }, { label: 'SCADA (MWh)', data: scadaDischarge, backgroundColor: '#34d399', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } } } });
@@ -118,12 +117,13 @@ function renderMonthlyCharts(labels, chargeData, dischargeData) {
 }
 
 // ==========================================
-// 3. SURPLUS DASHBOARD (NEW)
+// 3. SURPLUS DASHBOARD
 // ==========================================
 function updateSurplusDashboard() {
     const selectedMonth = document.getElementById('monthSelectSurplus').value;
     if (!selectedMonth || !rawData.surplus) return;
 
+    // SCADA (BESS)
     const monthScada = rawData.scada.filter(d => d.date.startsWith(selectedMonth));
     const scadaTotals = {};
     monthScada.forEach(d => {
@@ -132,19 +132,29 @@ function updateSurplusDashboard() {
         scadaTotals[d.date] += d.charge;
     });
 
+    // SCADA (PUMP)
+    const monthPump = rawData.pump ? rawData.pump.filter(d => d.date.startsWith(selectedMonth)) : [];
+    const pumpTotals = {};
+    monthPump.forEach(d => { pumpTotals[d.date] = d.val; });
+
+    // SURPLUS (ISP)
     const monthSurplus = rawData.surplus.filter(d => d.date.startsWith(selectedMonth));
     const surpTotals = {};
     monthSurplus.forEach(d => { surpTotals[d.date] = d.val; });
 
-    const allDates = [...new Set([...Object.keys(scadaTotals), ...Object.keys(surpTotals)])].sort();
+    const allDates = [...new Set([...Object.keys(scadaTotals), ...Object.keys(pumpTotals), ...Object.keys(surpTotals)])].sort();
     
     const labels = [];
     const dailyBessGWh = [];
+    const dailyPumpGWh = [];
     const dailySurpGWh = [];
     
     const cumBessGWh = [];
+    const cumPumpGWh = [];
     const cumSurpGWh = [];
+    
     let runBess = 0;
+    let runPump = 0;
     let runSurp = 0;
 
     allDates.forEach(date => {
@@ -152,22 +162,29 @@ function updateSurplusDashboard() {
         labels.push(`${parts[2]}/${parts[1]}`);
 
         let bessDay = (scadaTotals[date] || 0) / 1000;
-        // ΔΙΟΡΘΩΣΗ: Μετατροπή του Surplus σε απόλυτη (θετική) τιμή
-        let surpDay = Math.abs(surpTotals[date] || 0) / 1000;
+        let pumpDay = (pumpTotals[date] || 0) / 1000;
+        let surpDay = Math.abs(surpTotals[date] || 0) / 1000; // Απόλυτη τιμή
         
         dailyBessGWh.push(bessDay);
+        dailyPumpGWh.push(pumpDay);
         dailySurpGWh.push(surpDay);
 
         runBess += bessDay;
+        runPump += pumpDay;
         runSurp += surpDay;
+        
         cumBessGWh.push(runBess);
+        cumPumpGWh.push(runPump);
         cumSurpGWh.push(runSurp);
     });
 
-    renderSurplusCharts(labels, dailyBessGWh, dailySurpGWh, cumBessGWh, cumSurpGWh);
+    renderSurplusCharts(labels, dailyBessGWh, dailyPumpGWh, dailySurpGWh, cumBessGWh, cumPumpGWh, cumSurpGWh);
 }
 
-function renderSurplusCharts(labels, dailyBess, dailySurplus, cumBess, cumSurplus) {
+function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess, cumPump, cumSurplus) {
+    const t = i18n[currentLang];
+    
+    // 1. Stacked Bar Chart (BESS + PUMP + SURPLUS)
     const ctxStacked = document.getElementById('surplusStackedChart').getContext('2d');
     if (surplusStackedChartInst) surplusStackedChartInst.destroy();
     
@@ -177,6 +194,7 @@ function renderSurplusCharts(labels, dailyBess, dailySurplus, cumBess, cumSurplu
             labels: labels,
             datasets: [
                 { label: 'BESS Charge (SCADA)', data: dailyBess, backgroundColor: '#34d399', stack: 'Stack 0' },
+                { label: 'PUMP Charge (SCADA)', data: dailyPump, backgroundColor: '#3b82f6', stack: 'Stack 0' }, // Μπλε Αντλησιοταμίευση
                 { label: 'Residual Surplus (ISP)', data: dailySurplus, backgroundColor: '#ef4444', stack: 'Stack 0' }
             ]
         },
@@ -189,13 +207,21 @@ function renderSurplusCharts(labels, dailyBess, dailySurplus, cumBess, cumSurplu
                         footer: function(tooltipItems) {
                             let idx = tooltipItems[0].dataIndex;
                             let bess = dailyBess[idx];
+                            let pump = dailyPump[idx];
                             let surp = dailySurplus[idx];
-                            if (surp === 0) return "Zero ISP Surplus - Καθαρή λειτουργία Market Arbitrage";
                             
-                            // Ο υπολογισμός λειτουργεί πλέον σωστά (και τα δύο είναι θετικά)
-                            let total = bess + surp;
-                            let pct = ((bess / total) * 100).toFixed(1);
-                            return `\n💡 Τα BESS απορρόφησαν το ${pct}% \nτου Θεωρητικού Αρχικού Πλεονάσματος.`;
+                            if (surp === 0) return "Zero ISP Surplus\nΚαθαρή λειτουργία Market Arbitrage.";
+                            
+                            let total = bess + pump + surp;
+                            let pctBess = ((bess / total) * 100).toFixed(1);
+                            let pctPump = ((pump / total) * 100).toFixed(1);
+                            let pctSurp = ((surp / total) * 100).toFixed(1);
+                            
+                            let langText = (currentLang === 'el') ? 
+                                `\n💡 Επίλυση Θεωρητικού Πλεονάσματος:\n- Αντλησιοταμίευση (PUMP): ${pctPump}%\n- Μπαταρίες (BESS): ${pctBess}%\n- Τελικό Πλεόνασμα (Surplus): ${pctSurp}%` :
+                                `\n💡 Theoretical Surplus Resolution:\n- Pumped Hydro (PUMP): ${pctPump}%\n- Batteries (BESS): ${pctBess}%\n- Residual Surplus: ${pctSurp}%`;
+                            
+                            return langText;
                         }
                     }
                 }
@@ -207,6 +233,7 @@ function renderSurplusCharts(labels, dailyBess, dailySurplus, cumBess, cumSurplu
         }
     });
 
+    // 2. Cumulative Line Chart (BESS vs PUMP vs SURPLUS)
     const ctxCum = document.getElementById('surplusCumulativeChart').getContext('2d');
     if (surplusCumulativeChartInst) surplusCumulativeChartInst.destroy();
     
@@ -215,8 +242,9 @@ function renderSurplusCharts(labels, dailyBess, dailySurplus, cumBess, cumSurplu
         data: {
             labels: labels,
             datasets: [
-                { label: 'Cumulative BESS Charge', data: cumBess, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.1)', fill: true, tension: 0.3 },
-                { label: 'Cumulative Residual Surplus', data: cumSurplus, borderColor: '#ef4444', backgroundColor: 'transparent', fill: false, tension: 0.3 }
+                { label: 'Cum. BESS Charge', data: cumBess, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.1)', fill: true, tension: 0.3 },
+                { label: 'Cum. PUMP Charge', data: cumPump, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.3 },
+                { label: 'Cum. Residual Surplus', data: cumSurplus, borderColor: '#ef4444', backgroundColor: 'transparent', fill: false, tension: 0.3 }
             ]
         },
         options: {

@@ -296,11 +296,43 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
 // 4. ARBITRAGE P&L & HOURLY OPERATIONS
 // ==========================================
 function initArbitrageTab() {
+    console.log("initArbitrageTab called!");
     const select = document.getElementById('arbitrageDateSelect');
-    if (!select || !rawData.bessHourly) return;
+    if (!select) {
+        console.error("Error: #arbitrageDateSelect element not found in DOM!");
+        return;
+    }
 
-    if (select.options.length === 0) {
-        const dates = [...new Set(rawData.bessHourly.map(item => item["Ημερομηνία"]))].sort();
+    // Δοκιμάζουμε όλες τις πιθανές ονομασίες για να βρούμε τα δεδομένα
+    const hourlyData = (typeof rawData !== 'undefined' && rawData.bessHourly) ? rawData.bessHourly : 
+                       (window.bessHourlyData || window.rawData?.bessHourly || []);
+
+    console.log("Loaded rawData:", window.rawData);
+    console.log("Extracted bessHourly data:", hourlyData);
+
+    if (!hourlyData || hourlyData.length === 0) {
+        console.warn("Προσοχή: Τα δεδομένα bessHourly είναι άδεια ή δεν βρέθηκαν!");
+        select.innerHTML = '<option value="">Δεν βρέθηκαν δεδομένα</option>';
+        return;
+    }
+
+    if (select.options.length <= 1) {
+        const datesSet = new Set();
+        hourlyData.forEach(item => {
+            let rawDate = item["Ημερομηνία"] || item["date"];
+            if (rawDate) {
+                if (rawDate instanceof Date) {
+                    rawDate = rawDate.toISOString().split('T')[0];
+                } else {
+                    rawDate = String(rawDate).split('T')[0].trim();
+                }
+                datesSet.add(rawDate);
+            }
+        });
+
+        const dates = [...datesSet].sort();
+        console.log("Unique Dates extracted for Arbitrage:", dates);
+
         select.innerHTML = '';
         dates.forEach(d => {
             let opt = document.createElement('option');
@@ -308,6 +340,7 @@ function initArbitrageTab() {
             opt.innerText = d;
             select.appendChild(opt);
         });
+
         if (dates.length > 0) {
             select.value = dates[dates.length - 1];
         }
@@ -316,11 +349,24 @@ function initArbitrageTab() {
 }
 
 function renderArbitrageTab() {
-    const selectedDate = document.getElementById('arbitrageDateSelect').value;
-    if (!selectedDate || !rawData.bessHourly) return;
-
-    const dayData = rawData.bessHourly.filter(item => String(item["Ημερομηνία"]).startsWith(selectedDate));
+    const select = document.getElementById('arbitrageDateSelect');
+    if (!select) return;
     
+    const selectedDate = select.value;
+    const hourlyData = (typeof rawData !== 'undefined' && rawData.bessHourly) ? rawData.bessHourly : 
+                       (window.bessHourlyData || window.rawData?.bessHourly || []);
+
+    if (!selectedDate || hourlyData.length === 0) return;
+
+    const dayData = hourlyData.filter(item => {
+        let d = item["Ημερομηνία"] || item["date"];
+        if (!d) return false;
+        if (d instanceof Date) d = d.toISOString().split('T')[0];
+        return String(d).startsWith(selectedDate);
+    });
+
+    console.log("Filtered dayData for date " + selectedDate + ":", dayData);
+
     const hours = [];
     for (let h = 1; h <= 24; h++) {
         hours.push((h < 10 ? '0' + h : h) + ':00');
@@ -332,8 +378,8 @@ function renderArbitrageTab() {
     const pnlSummary = {};
 
     dayData.forEach(row => {
-        const unitName = row["Μονάδα BESS"];
-        if (unitName === "TOTAL BESS") return;
+        const unitName = row["Μονάδα BESS"] || row["unit"];
+        if (!unitName || unitName === "TOTAL BESS") return;
 
         const dataPoints = [];
         let totalChargeMWh = 0;
@@ -347,8 +393,6 @@ function renderArbitrageTab() {
         });
 
         const rte = totalChargeMWh > 0 ? (totalDischargeMWh / totalChargeMWh) * 100 : 0;
-        
-        // Estimated P&L calculation
         let estimatedDailyPnl = (totalDischargeMWh - totalChargeMWh) * 85;
         let unitProfit = totalDischargeMWh > 0 ? estimatedDailyPnl / totalDischargeMWh : 0;
 
@@ -370,36 +414,29 @@ function renderArbitrageTab() {
         colorIdx++;
     });
 
-    const ctx = document.getElementById('arbitrageDualChart').getContext('2d');
-    if (arbitrageDualChartInst) arbitrageDualChartInst.destroy();
+    const canvasCtx = document.getElementById('arbitrageDualChart');
+    if (!canvasCtx) {
+        console.error("Error: #arbitrageDualChart canvas not found!");
+        return;
+    }
+    const ctx = canvasCtx.getContext('2d');
+    if (window.arbitrageDualChartInst) window.arbitrageDualChartInst.destroy();
 
-    arbitrageDualChartInst = new Chart(ctx, {
+    window.arbitrageDualChartInst = new Chart(ctx, {
         type: 'bar',
-        data: {
-            labels: hours,
-            datasets: datasets
-        },
+        data: { labels: hours, datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                x: {
-                    stacked: true,
-                    grid: { display: false }
-                },
-                y: {
-                    stacked: true,
-                    grid: { color: '#334155' },
-                    title: { display: true, text: 'MW / MWh (Negative = Charge, Positive = Discharge)' }
-                }
+                x: { stacked: true, grid: { display: false } },
+                y: { stacked: true, grid: { color: '#334155' }, title: { display: true, text: 'MW / MWh' } }
             },
-            plugins: {
-                legend: { position: 'top' }
-            }
+            plugins: { legend: { position: 'top' } }
         }
     });
 
-    // Populate Financial Table
+    // Populate Table
     const tbody = document.getElementById('arbitrageTableBody');
     if (tbody) {
         tbody.innerHTML = '';

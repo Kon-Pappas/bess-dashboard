@@ -39,6 +39,7 @@
             <button id="tabBtnDaily" onclick="switchTab('daily')" class="text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap">Ημερήσια Ανάλυση</button>
             <button id="tabBtnMonthly" onclick="switchTab('monthly')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap">Μηνιαίος Αντίκτυπος</button>
             <button id="tabBtnSurplus" onclick="switchTab('surplus')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap">Πλεόνασμα & Ευελιξία</button>
+            <button id="tabBtnArbitrage" onclick="switchTab('arbitrage')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap">Arbitrage P&L</button>
         </div>
 
         <!-- ============================================== -->
@@ -176,6 +177,48 @@
                 <h2 class="text-lg font-semibold text-slate-200 mb-1" id="surplusCumulativeTitle">Αθροιστική Εξέλιξη (Cumulative BESS vs Surplus)</h2>
                 <p class="text-xs text-slate-400 mb-4" id="surplusCumulativeSub">Σύγκριση της αθροιστικής φόρτισης SCADA με το αθροιστικό υπολειπόμενο ISP Surplus</p>
                 <div class="relative h-80"><canvas id="surplusCumulativeChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- VIEW 4: ARBITRAGE P&L & HOURLY OPERATIONS -->
+        <!-- ============================================== -->
+        <div id="viewArbitrage" class="space-y-8 hidden">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-emerald-400">Arbitrage P&L & Ωριαίο Προφίλ Λειτουργίας</h2>
+                <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
+                    <label class="text-xs text-slate-300">Ημερομηνία:</label>
+                    <select id="arbitrageDateSelect" onchange="renderArbitrageTab()" class="bg-slate-900 border border-slate-600 text-slate-200 text-sm rounded p-1 outline-none"></select>
+                </div>
+            </div>
+
+            <!-- Dual-Axis / Stacked Bar Chart -->
+            <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-lg font-semibold text-slate-200 mb-1">Ωριαία Κίνηση BESS ανά Μονάδα (MWh)</h3>
+                <p class="text-xs text-slate-400 mb-4">Αρνητικές τιμές = Φόρτιση, Θετικές τιμές = Αποφόρτιση</p>
+                <div class="relative h-96"><canvas id="arbitrageDualChart"></canvas></div>
+            </div>
+
+            <!-- Financial Performance Table -->
+            <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-lg font-semibold text-slate-200 mb-4">Οικονομική Απόδοση & Arbitrage (Ημέρας)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+                            <tr>
+                                <th class="p-3">Μονάδα BESS</th>
+                                <th class="p-3">Συνολική Φόρτιση (MWh)</th>
+                                <th class="p-3">Συνολική Αποφόρτιση (MWh)</th>
+                                <th class="p-3">RTE (%)</th>
+                                <th class="p-3">Εκτιμώμενο Daily P&L (€)</th>
+                                <th class="p-3">Unit Profit (€/MWh)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="arbitrageTableBody" class="divide-y divide-slate-700">
+                            <!-- Δυναμική φόρτωση γραμμών -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 

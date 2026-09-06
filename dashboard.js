@@ -298,25 +298,22 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
 function initArbitrageTab() {
     console.log("initArbitrageTab called!");
     const select = document.getElementById('arbitrageDateSelect');
-    if (!select) {
-        console.error("Error: #arbitrageDateSelect element not found in DOM!");
-        return;
-    }
+    if (!select) return;
 
-    // Δοκιμάζουμε όλες τις πιθανές ονομασίες για να βρούμε τα δεδομένα
-    const hourlyData = (typeof rawData !== 'undefined' && rawData.bessHourly) ? rawData.bessHourly : 
+    // Ελέγχουμε αν υπάρχει το rawData, αλλιώς περιμένουμε να φορτώσει
+    const hourlyData = (typeof rawData !== 'undefined' && rawData && rawData.bessHourly) ? rawData.bessHourly : 
                        (window.bessHourlyData || window.rawData?.bessHourly || []);
 
-    console.log("Loaded rawData:", window.rawData);
-    console.log("Extracted bessHourly data:", hourlyData);
-
     if (!hourlyData || hourlyData.length === 0) {
-        console.warn("Προσοχή: Τα δεδομένα bessHourly είναι άδεια ή δεν βρέθηκαν!");
-        select.innerHTML = '<option value="">Δεν βρέθηκαν δεδομένα</option>';
+        console.warn("Τα δεδομένα δεν έχουν φορτωθεί ακόμα. Αναμένεται λήψη...");
+        select.innerHTML = '<option value="">Φόρτωση δεδομένων...</option>';
+        
+        // Αυτόματη επαναδοκιμή σε 1 δευτερόλεπτο αν τα δεδομένα καθυστερούν
+        setTimeout(initArbitrageTab, 1000);
         return;
     }
 
-    if (select.options.length <= 1) {
+    if (select.options.length <= 1 || select.options[0].text === "Φόρτωση δεδομένων...") {
         const datesSet = new Set();
         hourlyData.forEach(item => {
             let rawDate = item["Ημερομηνία"] || item["date"];
@@ -353,7 +350,7 @@ function renderArbitrageTab() {
     if (!select) return;
     
     const selectedDate = select.value;
-    const hourlyData = (typeof rawData !== 'undefined' && rawData.bessHourly) ? rawData.bessHourly : 
+    const hourlyData = (typeof rawData !== 'undefined' && rawData && rawData.bessHourly) ? rawData.bessHourly : 
                        (window.bessHourlyData || window.rawData?.bessHourly || []);
 
     if (!selectedDate || hourlyData.length === 0) return;
@@ -364,8 +361,6 @@ function renderArbitrageTab() {
         if (d instanceof Date) d = d.toISOString().split('T')[0];
         return String(d).startsWith(selectedDate);
     });
-
-    console.log("Filtered dayData for date " + selectedDate + ":", dayData);
 
     const hours = [];
     for (let h = 1; h <= 24; h++) {
@@ -415,10 +410,7 @@ function renderArbitrageTab() {
     });
 
     const canvasCtx = document.getElementById('arbitrageDualChart');
-    if (!canvasCtx) {
-        console.error("Error: #arbitrageDualChart canvas not found!");
-        return;
-    }
+    if (!canvasCtx) return;
     const ctx = canvasCtx.getContext('2d');
     if (window.arbitrageDualChartInst) window.arbitrageDualChartInst.destroy();
 

@@ -7,10 +7,47 @@ let monthlyChargeChartInst = null;
 // SURPLUS CHARTS
 let surplusStackedChartInst = null;
 let surplusCumulativeChartInst = null;
+// ARBITRAGE CHARTS
+let arbitrageDualChartInst = null;
 
 function formatGWh(mwh) {
     let gwh = mwh / 1000;
     return gwh < 1 ? gwh.toFixed(3) : gwh.toFixed(2);
+}
+
+// ==========================================
+// 0. TABS SWITCHING (Controller)
+// ==========================================
+function switchTab(tabName) {
+    // Απόκρυψη όλων των views
+    document.getElementById('viewDaily').classList.add('hidden');
+    document.getElementById('viewMonthly').classList.add('hidden');
+    document.getElementById('viewSurplus').classList.add('hidden');
+    document.getElementById('viewArbitrage').classList.add('hidden');
+
+    // Επαναφορά χρωμάτων κουμπιών tabs
+    document.getElementById('tabBtnDaily').className = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap";
+    document.getElementById('tabBtnMonthly').className = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap";
+    document.getElementById('tabBtnSurplus').className = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap";
+    document.getElementById('tabBtnArbitrage').className = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap";
+
+    if (tabName === 'daily') {
+        document.getElementById('viewDaily').classList.remove('hidden');
+        document.getElementById('tabBtnDaily').className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap";
+        updateDashboard();
+    } else if (tabName === 'monthly') {
+        document.getElementById('viewMonthly').classList.remove('hidden');
+        document.getElementById('tabBtnMonthly').className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap";
+        updateMonthlyDashboard();
+    } else if (tabName === 'surplus') {
+        document.getElementById('viewSurplus').classList.remove('hidden');
+        document.getElementById('tabBtnSurplus').className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap";
+        updateSurplusDashboard();
+    } else if (tabName === 'arbitrage') {
+        document.getElementById('viewArbitrage').classList.remove('hidden');
+        document.getElementById('tabBtnArbitrage').className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap";
+        initArbitrageTab();
+    }
 }
 
 // ==========================================
@@ -207,7 +244,6 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
                             let pump = dailyPump[idx];
                             let surp = dailySurplus[idx];
                             
-                            // Προσθήκη ελέγχου γλώσσας και βελτίωσης λεκτικού για Surplus = 0
                             if (surp === 0) {
                                 return (currentLang === 'el') 
                                     ? "Zero ISP Surplus\nΠιθανή καθαρή λειτουργία Market Arbitrage." 
@@ -254,4 +290,132 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
             scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' }, title: { display: true, text: 'GWh' } } }
         }
     });
+}
+
+// ==========================================
+// 4. ARBITRAGE P&L & HOURLY OPERATIONS
+// ==========================================
+function initArbitrageTab() {
+    const select = document.getElementById('arbitrageDateSelect');
+    if (!select || !rawData.bessHourly) return;
+
+    if (select.options.length === 0) {
+        const dates = [...new Set(rawData.bessHourly.map(item => item["Ημερομηνία"]))].sort();
+        select.innerHTML = '';
+        dates.forEach(d => {
+            let opt = document.createElement('option');
+            opt.value = d;
+            opt.innerText = d;
+            select.appendChild(opt);
+        });
+        if (dates.length > 0) {
+            select.value = dates[dates.length - 1];
+        }
+    }
+    renderArbitrageTab();
+}
+
+function renderArbitrageTab() {
+    const selectedDate = document.getElementById('arbitrageDateSelect').value;
+    if (!selectedDate || !rawData.bessHourly) return;
+
+    const dayData = rawData.bessHourly.filter(item => String(item["Ημερομηνία"]).startsWith(selectedDate));
+    
+    const hours = [];
+    for (let h = 1; h <= 24; h++) {
+        hours.push((h < 10 ? '0' + h : h) + ':00');
+    }
+
+    const datasets = [];
+    const colorPalette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+    let colorIdx = 0;
+    const pnlSummary = {};
+
+    dayData.forEach(row => {
+        const unitName = row["Μονάδα BESS"];
+        if (unitName === "TOTAL BESS") return;
+
+        const dataPoints = [];
+        let totalChargeMWh = 0;
+        let totalDischargeMWh = 0;
+
+        hours.forEach(hr => {
+            const val = parseFloat(row[hr]) || 0;
+            dataPoints.push(val);
+            if (val < 0) totalChargeMWh += Math.abs(val);
+            if (val > 0) totalDischargeMWh += val;
+        });
+
+        const rte = totalChargeMWh > 0 ? (totalDischargeMWh / totalChargeMWh) * 100 : 0;
+        
+        // Estimated P&L calculation
+        let estimatedDailyPnl = (totalDischargeMWh - totalChargeMWh) * 85;
+        let unitProfit = totalDischargeMWh > 0 ? estimatedDailyPnl / totalDischargeMWh : 0;
+
+        pnlSummary[unitName] = {
+            charge: totalChargeMWh,
+            discharge: totalDischargeMWh,
+            rte: rte,
+            pnl: estimatedDailyPnl,
+            unitProfit: unitProfit
+        };
+
+        datasets.push({
+            label: unitName,
+            data: dataPoints,
+            backgroundColor: colorPalette[colorIdx % colorPalette.length],
+            stack: 'bessStack',
+            borderRadius: 2
+        });
+        colorIdx++;
+    });
+
+    const ctx = document.getElementById('arbitrageDualChart').getContext('2d');
+    if (arbitrageDualChartInst) arbitrageDualChartInst.destroy();
+
+    arbitrageDualChartInst = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: hours,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: { display: false }
+                },
+                y: {
+                    stacked: true,
+                    grid: { color: '#334155' },
+                    title: { display: true, text: 'MW / MWh (Negative = Charge, Positive = Discharge)' }
+                }
+            },
+            plugins: {
+                legend: { position: 'top' }
+            }
+        }
+    });
+
+    // Populate Financial Table
+    const tbody = document.getElementById('arbitrageTableBody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        Object.keys(pnlSummary).forEach(unit => {
+            const item = pnlSummary[unit];
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-700/50 transition-colors";
+            tr.innerHTML = `
+                <td class="p-3 font-medium text-white">${unit}</td>
+                <td class="p-3">${item.charge.toFixed(2)}</td>
+                <td class="p-3">${item.discharge.toFixed(2)}</td>
+                <td class="p-3">${item.rte.toFixed(1)}%</td>
+                <td class="p-3 font-semibold ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${item.pnl.toLocaleString('el-GR', {style: 'currency', currency: 'EUR'})}</td>
+                <td class="p-3">${item.unitProfit.toFixed(2)} €/MWh</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 }

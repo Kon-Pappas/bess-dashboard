@@ -1,7 +1,7 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbyZESmS6vPrmjQsa6ZfAsHFLhcL562KhyfS_39cEUcZJp3fA6li9iGZcnqOV-_346KS/exec";
 
-// Προστέθηκε το pump!
-let rawData = { isp: [], scada: [], surplus: [], pump: [] };
+// Προστέθηκαν τα bessHourly και mcpHourly!
+let rawData = { isp: [], scada: [], surplus: [], pump: [], bessHourly: [], mcpHourly: [] };
 let currentLang = 'el';
 
 const i18n = {
@@ -202,6 +202,10 @@ async function init() {
         
         rawData.isp = normalizeData(json.isp);
         rawData.scada = normalizeData(json.scada);
+        
+        // H ΜΑΓΕΙΑ ΕΔΩ:
+        rawData.bessHourly = json.bessHourly || [];
+        rawData.mcpHourly = json.mcpHourly || [];
         
         // Ομαλοποίηση Surplus
         if (json.surplus) {

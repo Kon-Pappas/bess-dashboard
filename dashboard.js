@@ -1,3 +1,6 @@
+// ==========================================
+// GLOBAL CHART INSTANCES
+// ==========================================
 // DAILY CHARTS
 let dischargeChartInst = null;
 let chargeChartInst = null;
@@ -10,9 +13,19 @@ let surplusCumulativeChartInst = null;
 // ARBITRAGE CHARTS
 let arbitrageDualChartInst = null;
 
+// ==========================================
+// HELPERS
+// ==========================================
 function formatGWh(mwh) {
     let gwh = mwh / 1000;
     return gwh < 1 ? gwh.toFixed(3) : gwh.toFixed(2);
+}
+
+function getHourlyData() {
+    // Ενιαία λογική άντλησης δεδομένων για το Arbitrage tab
+    return (typeof rawData !== 'undefined' && rawData && rawData.bessHourly) 
+        ? rawData.bessHourly 
+        : (window.bessHourlyData || window.rawData?.bessHourly || []);
 }
 
 // ==========================================
@@ -26,26 +39,29 @@ function switchTab(tabName) {
     document.getElementById('viewArbitrage').classList.add('hidden');
 
     // Επαναφορά χρωμάτων κουμπιών tabs
-    document.getElementById('tabBtnDaily').className = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap";
-    document.getElementById('tabBtnMonthly').className = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap";
-    document.getElementById('tabBtnSurplus').className = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap";
-    document.getElementById('tabBtnArbitrage').className = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap";
+    const inactiveClass = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap";
+    document.getElementById('tabBtnDaily').className = inactiveClass;
+    document.getElementById('tabBtnMonthly').className = inactiveClass;
+    document.getElementById('tabBtnSurplus').className = inactiveClass;
+    document.getElementById('tabBtnArbitrage').className = inactiveClass;
+
+    const activeClass = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap";
 
     if (tabName === 'daily') {
         document.getElementById('viewDaily').classList.remove('hidden');
-        document.getElementById('tabBtnDaily').className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap";
+        document.getElementById('tabBtnDaily').className = activeClass;
         updateDashboard();
     } else if (tabName === 'monthly') {
         document.getElementById('viewMonthly').classList.remove('hidden');
-        document.getElementById('tabBtnMonthly').className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap";
+        document.getElementById('tabBtnMonthly').className = activeClass;
         updateMonthlyDashboard();
     } else if (tabName === 'surplus') {
         document.getElementById('viewSurplus').classList.remove('hidden');
-        document.getElementById('tabBtnSurplus').className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap";
+        document.getElementById('tabBtnSurplus').className = activeClass;
         updateSurplusDashboard();
     } else if (tabName === 'arbitrage') {
         document.getElementById('viewArbitrage').classList.remove('hidden');
-        document.getElementById('tabBtnArbitrage').className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap";
+        document.getElementById('tabBtnArbitrage').className = activeClass;
         initArbitrageTab();
     }
 }
@@ -55,7 +71,7 @@ function switchTab(tabName) {
 // ==========================================
 function updateDashboard() {
     const selectedDate = document.getElementById('dateSelect').value;
-    if (!selectedDate || rawData.isp.length === 0) return;
+    if (!selectedDate || !rawData || !rawData.isp || rawData.isp.length === 0) return;
 
     const ispDay = rawData.isp.filter(d => d.date === selectedDate);
     const scadaDay = rawData.scada.filter(d => d.date === selectedDate);
@@ -87,12 +103,19 @@ function updateDashboard() {
         if (!unitMap[id]) unitMap[id] = { display: d.unit, ispDischarge: 0, scadaDischarge: 0, ispCharge: 0, scadaCharge: 0 };
         unitMap[id].scadaDischarge += d.discharge;
         unitMap[id].scadaCharge += d.charge;
-        unitMap[id].display = d.unit;
+        unitMap[id].display = d.unit; // Keep original SCADA naming preferred
     });
 
     const units = Object.keys(unitMap).sort();
     const labels = units.map(u => unitMap[u].display);
-    renderDailyCharts(labels, units.map(u => unitMap[u].ispDischarge), units.map(u => unitMap[u].scadaDischarge), units.map(u => unitMap[u].ispCharge), units.map(u => unitMap[u].scadaCharge));
+    
+    renderDailyCharts(
+        labels, 
+        units.map(u => unitMap[u].ispDischarge), 
+        units.map(u => unitMap[u].scadaDischarge), 
+        units.map(u => unitMap[u].ispCharge), 
+        units.map(u => unitMap[u].scadaCharge)
+    );
 }
 
 function renderDailyCharts(labels, ispDischarge, scadaDischarge, ispCharge, scadaCharge) {
@@ -101,11 +124,43 @@ function renderDailyCharts(labels, ispDischarge, scadaDischarge, ispCharge, scad
     
     const ctxDischarge = document.getElementById('dischargeChart').getContext('2d');
     if (dischargeChartInst) dischargeChartInst.destroy();
-    dischargeChartInst = new Chart(ctxDischarge, { type: 'bar', data: { labels: labels, datasets: [{ label: 'ISP (MWh)', data: ispDischarge, backgroundColor: '#60a5fa', borderRadius: 4 }, { label: 'SCADA (MWh)', data: scadaDischarge, backgroundColor: '#34d399', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } } } });
+    
+    dischargeChartInst = new Chart(ctxDischarge, { 
+        type: 'bar', 
+        data: { 
+            labels: labels, 
+            datasets: [
+                { label: 'ISP (MWh)', data: ispDischarge, backgroundColor: '#60a5fa', borderRadius: 4 }, 
+                { label: 'SCADA (MWh)', data: scadaDischarge, backgroundColor: '#34d399', borderRadius: 4 }
+            ] 
+        }, 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { position: 'top' } }, 
+            scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } } 
+        } 
+    });
 
     const ctxCharge = document.getElementById('chargeChart').getContext('2d');
     if (chargeChartInst) chargeChartInst.destroy();
-    chargeChartInst = new Chart(ctxCharge, { type: 'bar', data: { labels: labels, datasets: [{ label: 'ISP (MWh)', data: ispCharge, backgroundColor: '#c084fc', borderRadius: 4 }, { label: 'SCADA (MWh)', data: scadaCharge, backgroundColor: '#fb923c', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } } } });
+    
+    chargeChartInst = new Chart(ctxCharge, { 
+        type: 'bar', 
+        data: { 
+            labels: labels, 
+            datasets: [
+                { label: 'ISP (MWh)', data: ispCharge, backgroundColor: '#c084fc', borderRadius: 4 }, 
+                { label: 'SCADA (MWh)', data: scadaCharge, backgroundColor: '#fb923c', borderRadius: 4 }
+            ] 
+        }, 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { position: 'top' } }, 
+            scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } } 
+        } 
+    });
 }
 
 // ==========================================
@@ -113,10 +168,11 @@ function renderDailyCharts(labels, ispDischarge, scadaDischarge, ispCharge, scad
 // ==========================================
 function updateMonthlyDashboard() {
     const selectedMonth = document.getElementById('monthSelect').value;
-    if (!selectedMonth || rawData.scada.length === 0) return;
+    if (!selectedMonth || !rawData || !rawData.scada || rawData.scada.length === 0) return;
 
     const monthData = rawData.scada.filter(d => d.date.startsWith(selectedMonth));
     const dailyTotals = {};
+    
     monthData.forEach(d => {
         if (d.unit === "TOTAL BESS") return;
         if (!dailyTotals[d.date]) dailyTotals[d.date] = { charge: 0, discharge: 0 };
@@ -130,7 +186,9 @@ function updateMonthlyDashboard() {
 
     sortedDates.forEach(date => {
         let parts = date.split('-');
-        labels.push(`${parts[2]}/${parts[1]}`);
+        if (parts.length >= 3) labels.push(`${parts[2]}/${parts[1]}`);
+        else labels.push(date); // Fallback if format is not YYYY-MM-DD
+        
         cumCharge += dailyTotals[date].charge;
         cumDischarge += dailyTotals[date].discharge;
         chargeData.push(cumCharge / 1000); 
@@ -146,11 +204,39 @@ function updateMonthlyDashboard() {
 function renderMonthlyCharts(labels, chargeData, dischargeData) {
     const ctxDischarge = document.getElementById('monthlyDischargeChart').getContext('2d');
     if (monthlyDischargeChartInst) monthlyDischargeChartInst.destroy();
-    monthlyDischargeChartInst = new Chart(ctxDischarge, { type: 'line', data: { labels: labels, datasets: [{ label: 'GWh', data: dischargeData, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.2)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#34d399' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' }, title: { display: true, text: 'GWh' } } } } });
+    
+    monthlyDischargeChartInst = new Chart(ctxDischarge, { 
+        type: 'line', 
+        data: { 
+            labels: labels, 
+            datasets: [{ 
+                label: 'GWh', data: dischargeData, borderColor: '#34d399', 
+                backgroundColor: 'rgba(52, 211, 153, 0.2)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#34d399' 
+            }] 
+        }, 
+        options: { 
+            responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, 
+            scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' }, title: { display: true, text: 'GWh' } } } 
+        } 
+    });
 
     const ctxCharge = document.getElementById('monthlyChargeChart').getContext('2d');
     if (monthlyChargeChartInst) monthlyChargeChartInst.destroy();
-    monthlyChargeChartInst = new Chart(ctxCharge, { type: 'line', data: { labels: labels, datasets: [{ label: 'GWh', data: chargeData, borderColor: '#fb923c', backgroundColor: 'rgba(251, 146, 60, 0.2)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#fb923c' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' }, title: { display: true, text: 'GWh' } } } } });
+    
+    monthlyChargeChartInst = new Chart(ctxCharge, { 
+        type: 'line', 
+        data: { 
+            labels: labels, 
+            datasets: [{ 
+                label: 'GWh', data: chargeData, borderColor: '#fb923c', 
+                backgroundColor: 'rgba(251, 146, 60, 0.2)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#fb923c' 
+            }] 
+        }, 
+        options: { 
+            responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, 
+            scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' }, title: { display: true, text: 'GWh' } } } 
+        } 
+    });
 }
 
 // ==========================================
@@ -158,10 +244,10 @@ function renderMonthlyCharts(labels, chargeData, dischargeData) {
 // ==========================================
 function updateSurplusDashboard() {
     const selectedMonth = document.getElementById('monthSelectSurplus').value;
-    if (!selectedMonth || !rawData.surplus) return;
+    if (!selectedMonth || !rawData || !rawData.surplus) return;
 
     // SCADA (BESS)
-    const monthScada = rawData.scada.filter(d => d.date.startsWith(selectedMonth));
+    const monthScada = rawData.scada ? rawData.scada.filter(d => d.date.startsWith(selectedMonth)) : [];
     const scadaTotals = {};
     monthScada.forEach(d => {
         if (d.unit === "TOTAL BESS") return;
@@ -196,7 +282,8 @@ function updateSurplusDashboard() {
 
     allDates.forEach(date => {
         let parts = date.split('-');
-        labels.push(`${parts[2]}/${parts[1]}`);
+        if (parts.length >= 3) labels.push(`${parts[2]}/${parts[1]}`);
+        else labels.push(date);
 
         let bessDay = (scadaTotals[date] || 0) / 1000;
         let pumpDay = (pumpTotals[date] || 0) / 1000;
@@ -222,6 +309,9 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
     const ctxStacked = document.getElementById('surplusStackedChart').getContext('2d');
     if (surplusStackedChartInst) surplusStackedChartInst.destroy();
     
+    // Ασφαλής έλεγχος για το currentLang
+    const lang = typeof currentLang !== 'undefined' ? currentLang : 'el';
+
     surplusStackedChartInst = new Chart(ctxStacked, {
         type: 'bar',
         data: {
@@ -245,7 +335,7 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
                             let surp = dailySurplus[idx];
                             
                             if (surp === 0) {
-                                return (currentLang === 'el') 
+                                return (lang === 'el') 
                                     ? "Zero ISP Surplus\nΠιθανή καθαρή λειτουργία Market Arbitrage." 
                                     : "Zero ISP Surplus\nPotential pure Market Arbitrage operation.";
                             }
@@ -255,11 +345,9 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
                             let pctPump = ((pump / total) * 100).toFixed(1);
                             let pctSurp = ((surp / total) * 100).toFixed(1);
                             
-                            let langText = (currentLang === 'el') ? 
+                            return (lang === 'el') ? 
                                 `\n💡 Επίλυση Θεωρητικού Πλεονάσματος:\n- Αντλησιοταμίευση (PUMP): ${pctPump}%\n- Μπαταρίες (BESS): ${pctBess}%\n- Τελικό Πλεόνασμα (Surplus): ${pctSurp}%` :
                                 `\n💡 Theoretical Surplus Resolution:\n- Pumped Hydro (PUMP): ${pctPump}%\n- Batteries (BESS): ${pctBess}%\n- Residual Surplus: ${pctSurp}%`;
-                            
-                            return langText;
                         }
                     }
                 }
@@ -300,9 +388,7 @@ function initArbitrageTab() {
     const select = document.getElementById('arbitrageDateSelect');
     if (!select) return;
 
-    // Ελέγχουμε αν υπάρχει το rawData, αλλιώς περιμένουμε να φορτώσει
-    const hourlyData = (typeof rawData !== 'undefined' && rawData && rawData.bessHourly) ? rawData.bessHourly : 
-                       (window.bessHourlyData || window.rawData?.bessHourly || []);
+    const hourlyData = getHourlyData();
 
     if (!hourlyData || hourlyData.length === 0) {
         console.warn("Τα δεδομένα δεν έχουν φορτωθεί ακόμα. Αναμένεται λήψη...");
@@ -315,6 +401,7 @@ function initArbitrageTab() {
 
     if (select.options.length <= 1 || select.options[0].text === "Φόρτωση δεδομένων...") {
         const datesSet = new Set();
+        
         hourlyData.forEach(item => {
             let rawDate = item["Ημερομηνία"] || item["date"];
             if (rawDate) {
@@ -350,10 +437,9 @@ function renderArbitrageTab() {
     if (!select) return;
     
     const selectedDate = select.value;
-    const hourlyData = (typeof rawData !== 'undefined' && rawData && rawData.bessHourly) ? rawData.bessHourly : 
-                       (window.bessHourlyData || window.rawData?.bessHourly || []);
+    const hourlyData = getHourlyData();
 
-    if (!selectedDate || hourlyData.length === 0) return;
+    if (!selectedDate || !hourlyData || hourlyData.length === 0) return;
 
     const dayData = hourlyData.filter(item => {
         let d = item["Ημερομηνία"] || item["date"];
@@ -412,9 +498,11 @@ function renderArbitrageTab() {
     const canvasCtx = document.getElementById('arbitrageDualChart');
     if (!canvasCtx) return;
     const ctx = canvasCtx.getContext('2d');
-    if (window.arbitrageDualChartInst) window.arbitrageDualChartInst.destroy();
+    
+    // Χρήση της τοπικής μεταβλητής αντί για window.arbitrageDualChartInst
+    if (arbitrageDualChartInst) arbitrageDualChartInst.destroy();
 
-    window.arbitrageDualChartInst = new Chart(ctx, {
+    arbitrageDualChartInst = new Chart(ctx, {
         type: 'bar',
         data: { labels: hours, datasets: datasets },
         options: {

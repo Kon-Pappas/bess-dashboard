@@ -431,6 +431,12 @@ function renderArbitrageTab() {
 
     if (!selectedDate || !hourlyData || hourlyData.length === 0) return;
 
+    // Αναγνώριση γλώσσας
+    const lang = typeof currentLang !== 'undefined' ? currentLang : 'el';
+    const mcpLegendLabel = (lang === 'en') ? 'MCP Price (€/MWh)' : 'Τιμή MCP (€/MWh)';
+    const yBessTitle = (lang === 'en') ? 'BESS Volume (MWh)' : 'Όγκος BESS (MWh)';
+    const yMcpTitle = (lang === 'en') ? 'MCP Price (€/MWh)' : 'Τιμή MCP (€/MWh)';
+
     const dayData = hourlyData.filter(item => {
         let d = item["Ημερομηνία"] || item["date"];
         if (!d) return false;
@@ -448,14 +454,12 @@ function renderArbitrageTab() {
 
     const chartLabels = [];
     
-    // Φτιάχνουμε απλώς τα labels για το γράφημα (x-axis)
     for (let h = 1; h <= 24; h++) {
         let padHour = (h < 10 ? '0' + h : h) + ':00';
         chartLabels.push(padHour);
     }
 
     if (mcpRow) {
-        // Διαβάζουμε το MCP ψάχνοντας το '1:00', '2:00' κλπ (όπως είναι στο excel σου)
         for (let h = 1; h <= 24; h++) {
             let k = h + ':00';
             dailyMcp[h-1] = parseFloat(String(mcpRow[k]).replace(',', '.')) || 0;
@@ -478,13 +482,11 @@ function renderArbitrageTab() {
         let dailyCost = 0;
 
         for (let h = 1; h <= 24; h++) {
-            // Ο ΑΛΕΞΙΣΦΑΙΡΟΣ ΕΛΕΓΧΟΣ: Ψάχνει κάθε πιθανή μορφή ώρας
-            let key1 = h + ':00';                      // "1:00"
-            let key2 = (h < 10 ? '0' + h : h) + ':00'; // "01:00"
-            let key3 = key1 + ':00';                   // "1:00:00"
-            let key4 = key2 + ':00';                   // "01:00:00"
+            let key1 = h + ':00';                     
+            let key2 = (h < 10 ? '0' + h : h) + ':00'; 
+            let key3 = key1 + ':00';                   
+            let key4 = key2 + ':00';                   
             
-            // Παίρνει όποιο βρει να έχει δεδομένα, αλλιώς βάζει 0
             let rawVal = row[key1] ?? row[key2] ?? row[key3] ?? row[key4] ?? 0;
             
             const val = parseFloat(String(rawVal).replace(',', '.')) || 0;
@@ -529,7 +531,7 @@ function renderArbitrageTab() {
 
     if (mcpRow) {
         datasets.push({
-            label: 'Τιμή MCP (€/MWh)',
+            label: mcpLegendLabel, // Δυναμική Μετάφραση!
             data: dailyMcp,
             borderColor: '#eab308', 
             backgroundColor: '#eab308',
@@ -558,7 +560,7 @@ function renderArbitrageTab() {
                 y: { 
                     stacked: true, 
                     grid: { color: '#334155' }, 
-                    title: { display: true, text: 'BESS Volume (MWh)' },
+                    title: { display: true, text: yBessTitle }, // Δυναμική Μετάφραση!
                     position: 'left'
                 },
                 yMcp: {
@@ -566,7 +568,7 @@ function renderArbitrageTab() {
                     display: true,
                     position: 'right',
                     grid: { display: false },
-                    title: { display: true, text: 'MCP (€/MWh)', color: '#eab308' },
+                    title: { display: true, text: yMcpTitle, color: '#eab308' }, // Δυναμική Μετάφραση!
                     ticks: { color: '#eab308' }
                 }
             },

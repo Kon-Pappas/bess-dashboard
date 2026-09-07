@@ -1,6 +1,5 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbyZESmS6vPrmjQsa6ZfAsHFLhcL562KhyfS_39cEUcZJp3fA6li9iGZcnqOV-_346KS/exec";
 
-// Προστέθηκαν τα bessHourly και mcpHourly!
 let rawData = { isp: [], scada: [], surplus: [], pump: [], bessHourly: [], mcpHourly: [] };
 let currentLang = 'el';
 
@@ -16,6 +15,7 @@ const i18n = {
         tabDaily: "Ημερήσια Ανάλυση",
         tabMonthly: "Μηνιαίος Αντίκτυπος",
         tabSurplus: "Πλεόνασμα & Ευελιξία",
+        tabArbitrage: "Arbitrage P&L",
         // Daily
         dischargeTitle: "Αποφόρτιση (Discharge) Ανά Μονάδα BESS (MWh)",
         totalDischarge: "Συνολική Αποφόρτιση",
@@ -36,7 +36,19 @@ const i18n = {
         surplusStackedSub: "Απόλυτες τιμές. Τις μέρες χωρίς κόκκινη μπάρα (Surplus = 0) η φόρτιση αφορά καθαρά λειτουργία αγοράς (arbitrage).",
         surplusBadgeTip: "Το % απορρόφησης υπολογίζεται επί του Θεωρητικού Αρχικού Πλεονάσματος (Surplus + BESS Charge + PUMP Charge)",
         surplusCumulativeTitle: "Αθροιστική Εξέλιξη Ευελιξίας (Cumulative BESS & PUMP vs Surplus)",
-        surplusCumulativeSub: "Σύγκριση της αθροιστικής φόρτισης SCADA (Μπαταρίες + Αντλησιοταμίευση) με το αθροιστικό υπολειπόμενο ISP Surplus"
+        surplusCumulativeSub: "Σύγκριση της αθροιστικής φόρτισης SCADA (Μπαταρίες + Αντλησιοταμίευση) με το αθροιστικό υπολειπόμενο ISP Surplus",
+        // Arbitrage Tab
+        arbitrageMainTitle: "Arbitrage P&L & Ωριαίο Προφίλ Λειτουργίας",
+        arbitrageDateLabel: "Ημερομηνία:",
+        arbitrageChartTitle: "Ωριαία Κίνηση BESS ανά Μονάδα (MWh)",
+        arbitrageChartSub: "Αρνητικές τιμές = Φόρτιση, Θετικές τιμές = Αποφόρτιση",
+        arbitrageTableTitle: "Οικονομική Απόδοση & Arbitrage (Ημέρας)",
+        thUnit: "ΜΟΝΑΔΑ BESS",
+        thCharge: "ΣΥΝΟΛΙΚΗ ΦΟΡΤΙΣΗ (MWH)",
+        thDischarge: "ΣΥΝΟΛΙΚΗ ΑΠΟΦΟΡΤΙΣΗ (MWH)",
+        thRte: "RTE (%)",
+        thPnl: "ΕΚΤΙΜΩΜΕΝΟ DAILY P&L (€)",
+        thProfit: "UNIT PROFIT (€/MWH)"
     },
     en: {
         title: "Greek BESS Market Analytics",
@@ -49,6 +61,7 @@ const i18n = {
         tabDaily: "Daily Analytics",
         tabMonthly: "Monthly Impact",
         tabSurplus: "Surplus & Flexibility",
+        tabArbitrage: "Arbitrage P&L",
         // Daily
         dischargeTitle: "Discharge Per BESS Unit (MWh)",
         totalDischarge: "Total Discharge",
@@ -69,7 +82,19 @@ const i18n = {
         surplusStackedSub: "Absolute values. Days with no red bar (Surplus = 0) indicate purely market-driven arbitrage charging.",
         surplusBadgeTip: "Absorption % is calculated on the Theoretical Initial Surplus (ISP Surplus + BESS + PUMP)",
         surplusCumulativeTitle: "Cumulative Flexibility Evolution (BESS & PUMP vs Surplus)",
-        surplusCumulativeSub: "Comparison of cumulative SCADA charging (Batteries + Pumped Hydro) vs cumulative residual ISP Surplus"
+        surplusCumulativeSub: "Comparison of cumulative SCADA charging (Batteries + Pumped Hydro) vs cumulative residual ISP Surplus",
+        // Arbitrage Tab
+        arbitrageMainTitle: "Arbitrage P&L & Hourly Operation Profile",
+        arbitrageDateLabel: "Date:",
+        arbitrageChartTitle: "Hourly BESS Operation per Unit (MWh)",
+        arbitrageChartSub: "Negative values = Charging, Positive values = Discharging",
+        arbitrageTableTitle: "Daily Financial Performance & Arbitrage",
+        thUnit: "BESS UNIT",
+        thCharge: "TOTAL CHARGE (MWH)",
+        thDischarge: "TOTAL DISCHARGE (MWH)",
+        thRte: "RTE (%)",
+        thPnl: "ESTIMATED DAILY P&L (€)",
+        thProfit: "UNIT PROFIT (€/MWH)"
     }
 };
 
@@ -90,6 +115,7 @@ function setLang(lang) {
     document.getElementById('tabBtnDaily').innerText = t.tabDaily;
     document.getElementById('tabBtnMonthly').innerText = t.tabMonthly;
     document.getElementById('tabBtnSurplus').innerText = t.tabSurplus;
+    document.getElementById('tabBtnArbitrage').innerText = t.tabArbitrage;
     
     // Daily View
     document.getElementById('dischargeTitle').innerText = t.dischargeTitle;
@@ -117,6 +143,19 @@ function setLang(lang) {
     document.getElementById('surplusCumulativeTitle').innerText = t.surplusCumulativeTitle;
     document.getElementById('surplusCumulativeSub').innerText = t.surplusCumulativeSub;
 
+    // Arbitrage View
+    document.getElementById('arbitrageMainTitle').innerText = t.arbitrageMainTitle;
+    document.getElementById('arbitrageDateLabel').innerText = t.arbitrageDateLabel;
+    document.getElementById('arbitrageChartTitle').innerText = t.arbitrageChartTitle;
+    document.getElementById('arbitrageChartSub').innerText = t.arbitrageChartSub;
+    document.getElementById('arbitrageTableTitle').innerText = t.arbitrageTableTitle;
+    document.getElementById('thUnit').innerText = t.thUnit;
+    document.getElementById('thCharge').innerText = t.thCharge;
+    document.getElementById('thDischarge').innerText = t.thDischarge;
+    document.getElementById('thRte').innerText = t.thRte;
+    document.getElementById('thPnl').innerText = t.thPnl;
+    document.getElementById('thProfit').innerText = t.thProfit;
+
     if(lang === 'el') {
         document.getElementById('btnGr').className = "px-2 py-1 rounded bg-emerald-600 text-white transition";
         document.getElementById('btnEn').className = "px-2 py-1 rounded text-slate-400 hover:text-white transition";
@@ -128,6 +167,7 @@ function setLang(lang) {
     if (typeof updateDashboard === "function") updateDashboard();
     if (typeof updateMonthlyDashboard === "function") updateMonthlyDashboard();
     if (typeof updateSurplusDashboard === "function") updateSurplusDashboard();
+    if (typeof renderArbitrageTab === "function") renderArbitrageTab(); // Για να μεταφράζει και τον άξονα στο γράφημα!
 }
 
 function switchTab(tabId) {
@@ -202,12 +242,9 @@ async function init() {
         
         rawData.isp = normalizeData(json.isp);
         rawData.scada = normalizeData(json.scada);
-        
-        // H ΜΑΓΕΙΑ ΕΔΩ:
         rawData.bessHourly = json.bessHourly || [];
         rawData.mcpHourly = json.mcpHourly || [];
         
-        // Ομαλοποίηση Surplus
         if (json.surplus) {
             rawData.surplus = json.surplus.map(d => {
                 const keys = Object.keys(d);
@@ -218,7 +255,6 @@ async function init() {
             });
         }
 
-        // Ομαλοποίηση Pump
         if (json.pump) {
             rawData.pump = json.pump.map(d => {
                 const keys = Object.keys(d);

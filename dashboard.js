@@ -1,16 +1,12 @@
 // ==========================================
 // GLOBAL CHART INSTANCES
 // ==========================================
-// DAILY CHARTS
 let dischargeChartInst = null;
 let chargeChartInst = null;
-// MONTHLY CHARTS
 let monthlyDischargeChartInst = null;
 let monthlyChargeChartInst = null;
-// SURPLUS CHARTS
 let surplusStackedChartInst = null;
 let surplusCumulativeChartInst = null;
-// ARBITRAGE CHARTS
 let arbitrageDualChartInst = null;
 
 // ==========================================
@@ -22,23 +18,26 @@ function formatGWh(mwh) {
 }
 
 function getHourlyData() {
-    // Ενιαία λογική άντλησης δεδομένων για το Arbitrage tab
     return (typeof rawData !== 'undefined' && rawData && rawData.bessHourly) 
         ? rawData.bessHourly 
         : (window.bessHourlyData || window.rawData?.bessHourly || []);
+}
+
+function getMcpData() {
+    return (typeof rawData !== 'undefined' && rawData && rawData.mcpHourly) 
+        ? rawData.mcpHourly 
+        : (window.rawData?.mcpHourly || []);
 }
 
 // ==========================================
 // 0. TABS SWITCHING (Controller)
 // ==========================================
 function switchTab(tabName) {
-    // Απόκρυψη όλων των views
     document.getElementById('viewDaily').classList.add('hidden');
     document.getElementById('viewMonthly').classList.add('hidden');
     document.getElementById('viewSurplus').classList.add('hidden');
     document.getElementById('viewArbitrage').classList.add('hidden');
 
-    // Επαναφορά χρωμάτων κουμπιών tabs
     const inactiveClass = "text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap";
     document.getElementById('tabBtnDaily').className = inactiveClass;
     document.getElementById('tabBtnMonthly').className = inactiveClass;
@@ -103,7 +102,7 @@ function updateDashboard() {
         if (!unitMap[id]) unitMap[id] = { display: d.unit, ispDischarge: 0, scadaDischarge: 0, ispCharge: 0, scadaCharge: 0 };
         unitMap[id].scadaDischarge += d.discharge;
         unitMap[id].scadaCharge += d.charge;
-        unitMap[id].display = d.unit; // Keep original SCADA naming preferred
+        unitMap[id].display = d.unit;
     });
 
     const units = Object.keys(unitMap).sort();
@@ -135,8 +134,7 @@ function renderDailyCharts(labels, ispDischarge, scadaDischarge, ispCharge, scad
             ] 
         }, 
         options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
+            responsive: true, maintainAspectRatio: false, 
             plugins: { legend: { position: 'top' } }, 
             scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } } 
         } 
@@ -155,8 +153,7 @@ function renderDailyCharts(labels, ispDischarge, scadaDischarge, ispCharge, scad
             ] 
         }, 
         options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
+            responsive: true, maintainAspectRatio: false, 
             plugins: { legend: { position: 'top' } }, 
             scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } } 
         } 
@@ -187,7 +184,7 @@ function updateMonthlyDashboard() {
     sortedDates.forEach(date => {
         let parts = date.split('-');
         if (parts.length >= 3) labels.push(`${parts[2]}/${parts[1]}`);
-        else labels.push(date); // Fallback if format is not YYYY-MM-DD
+        else labels.push(date);
         
         cumCharge += dailyTotals[date].charge;
         cumDischarge += dailyTotals[date].discharge;
@@ -246,7 +243,6 @@ function updateSurplusDashboard() {
     const selectedMonth = document.getElementById('monthSelectSurplus').value;
     if (!selectedMonth || !rawData || !rawData.surplus) return;
 
-    // SCADA (BESS)
     const monthScada = rawData.scada ? rawData.scada.filter(d => d.date.startsWith(selectedMonth)) : [];
     const scadaTotals = {};
     monthScada.forEach(d => {
@@ -255,12 +251,10 @@ function updateSurplusDashboard() {
         scadaTotals[d.date] += d.charge;
     });
 
-    // SCADA (PUMP)
     const monthPump = rawData.pump ? rawData.pump.filter(d => d.date.startsWith(selectedMonth)) : [];
     const pumpTotals = {};
     monthPump.forEach(d => { pumpTotals[d.date] = d.val; });
 
-    // SURPLUS (ISP)
     const monthSurplus = rawData.surplus.filter(d => d.date.startsWith(selectedMonth));
     const surpTotals = {};
     monthSurplus.forEach(d => { surpTotals[d.date] = d.val; });
@@ -276,9 +270,7 @@ function updateSurplusDashboard() {
     const cumPumpGWh = [];
     const cumSurpGWh = [];
     
-    let runBess = 0;
-    let runPump = 0;
-    let runSurp = 0;
+    let runBess = 0, runPump = 0, runSurp = 0;
 
     allDates.forEach(date => {
         let parts = date.split('-');
@@ -309,7 +301,6 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
     const ctxStacked = document.getElementById('surplusStackedChart').getContext('2d');
     if (surplusStackedChartInst) surplusStackedChartInst.destroy();
     
-    // Ασφαλής έλεγχος για το currentLang
     const lang = typeof currentLang !== 'undefined' ? currentLang : 'el';
 
     surplusStackedChartInst = new Chart(ctxStacked, {
@@ -393,8 +384,6 @@ function initArbitrageTab() {
     if (!hourlyData || hourlyData.length === 0) {
         console.warn("Τα δεδομένα δεν έχουν φορτωθεί ακόμα. Αναμένεται λήψη...");
         select.innerHTML = '<option value="">Φόρτωση δεδομένων...</option>';
-        
-        // Αυτόματη επαναδοκιμή σε 1 δευτερόλεπτο αν τα δεδομένα καθυστερούν
         setTimeout(initArbitrageTab, 1000);
         return;
     }
@@ -432,12 +421,14 @@ function initArbitrageTab() {
     renderArbitrageTab();
 }
 
+// === Η ΟΡΙΣΤΙΚΗ ΕΚΔΟΣΗ ΜΕ DUAL AXIS (BESS + MCP) ΠΟΥ ΕΙΧΑ ΞΕΧΑΣΕΙ ΝΑ ΒΑΛΩ! ===
 function renderArbitrageTab() {
     const select = document.getElementById('arbitrageDateSelect');
     if (!select) return;
     
     const selectedDate = select.value;
     const hourlyData = getHourlyData();
+    const mcpData = getMcpData();
 
     if (!selectedDate || !hourlyData || hourlyData.length === 0) return;
 
@@ -448,9 +439,27 @@ function renderArbitrageTab() {
         return String(d).startsWith(selectedDate);
     });
 
-    const hours = [];
+    let dailyMcp = new Array(24).fill(0);
+    const mcpRow = mcpData.find(item => {
+        let d = item["Ημερομηνία"] || item["date"];
+        if (!d) return false;
+        if (d instanceof Date) d = d.toISOString().split('T')[0];
+        return String(d).startsWith(selectedDate);
+    });
+
+    const hoursBessKeys = [];
+    const hoursMcpKeys = [];
+    const chartLabels = [];
+    
     for (let h = 1; h <= 24; h++) {
-        hours.push((h < 10 ? '0' + h : h) + ':00');
+        let padHour = (h < 10 ? '0' + h : h) + ':00';
+        chartLabels.push(padHour);
+        hoursBessKeys.push(padHour); 
+        hoursMcpKeys.push(h + ':00'); // Για το MCP που έχει κλειδιά 1:00, 2:00
+    }
+
+    if (mcpRow) {
+        dailyMcp = hoursMcpKeys.map(k => parseFloat(String(mcpRow[k]).replace(',', '.')) || 0);
     }
 
     const datasets = [];
@@ -465,23 +474,35 @@ function renderArbitrageTab() {
         const dataPoints = [];
         let totalChargeMWh = 0;
         let totalDischargeMWh = 0;
+        let dailyRevenue = 0;
+        let dailyCost = 0;
 
-        hours.forEach(hr => {
-            const val = parseFloat(row[hr]) || 0;
+        hoursBessKeys.forEach((hr, idx) => {
+            const val = parseFloat(String(row[hr]).replace(',', '.')) || 0;
             dataPoints.push(val);
-            if (val < 0) totalChargeMWh += Math.abs(val);
-            if (val > 0) totalDischargeMWh += val;
+            
+            const currentMcp = dailyMcp[idx];
+
+            if (val < 0) {
+                let chargeVol = Math.abs(val);
+                totalChargeMWh += chargeVol;
+                dailyCost += (chargeVol * currentMcp);
+            }
+            if (val > 0) {
+                totalDischargeMWh += val;
+                dailyRevenue += (val * currentMcp);
+            }
         });
 
         const rte = totalChargeMWh > 0 ? (totalDischargeMWh / totalChargeMWh) * 100 : 0;
-        let estimatedDailyPnl = (totalDischargeMWh - totalChargeMWh) * 85;
-        let unitProfit = totalDischargeMWh > 0 ? estimatedDailyPnl / totalDischargeMWh : 0;
+        let actualDailyPnl = dailyRevenue - dailyCost; 
+        let unitProfit = totalDischargeMWh > 0 ? actualDailyPnl / totalDischargeMWh : 0;
 
         pnlSummary[unitName] = {
             charge: totalChargeMWh,
             discharge: totalDischargeMWh,
             rte: rte,
-            pnl: estimatedDailyPnl,
+            pnl: actualDailyPnl,
             unitProfit: unitProfit
         };
 
@@ -490,33 +511,76 @@ function renderArbitrageTab() {
             data: dataPoints,
             backgroundColor: colorPalette[colorIdx % colorPalette.length],
             stack: 'bessStack',
-            borderRadius: 2
+            borderRadius: 2,
+            type: 'bar',
+            yAxisID: 'y'
         });
         colorIdx++;
     });
+
+    if (mcpRow) {
+        datasets.push({
+            label: 'Τιμή MCP (€/MWh)',
+            data: dailyMcp,
+            borderColor: '#eab308', 
+            backgroundColor: '#eab308',
+            type: 'line',
+            borderWidth: 2,
+            pointRadius: 2,
+            fill: false,
+            yAxisID: 'yMcp'
+        });
+    }
 
     const canvasCtx = document.getElementById('arbitrageDualChart');
     if (!canvasCtx) return;
     const ctx = canvasCtx.getContext('2d');
     
-    // Χρήση της τοπικής μεταβλητής αντί για window.arbitrageDualChartInst
     if (arbitrageDualChartInst) arbitrageDualChartInst.destroy();
 
     arbitrageDualChartInst = new Chart(ctx, {
         type: 'bar',
-        data: { labels: hours, datasets: datasets },
+        data: { labels: chartLabels, datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
                 x: { stacked: true, grid: { display: false } },
-                y: { stacked: true, grid: { color: '#334155' }, title: { display: true, text: 'MW / MWh' } }
+                y: { 
+                    stacked: true, 
+                    grid: { color: '#334155' }, 
+                    title: { display: true, text: 'BESS Volume (MWh)' },
+                    position: 'left'
+                },
+                yMcp: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { display: false },
+                    title: { display: true, text: 'MCP (€/MWh)', color: '#eab308' },
+                    ticks: { color: '#eab308' }
+                }
             },
-            plugins: { legend: { position: 'top' } }
+            plugins: { 
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) label += ': ';
+                            if (context.dataset.yAxisID === 'yMcp') {
+                                label += context.parsed.y.toFixed(2) + ' €/MWh';
+                            } else {
+                                label += context.parsed.y.toFixed(2) + ' MWh';
+                            }
+                            return label;
+                        }
+                    }
+                } 
+            }
         }
     });
 
-    // Populate Table
     const tbody = document.getElementById('arbitrageTableBody');
     if (tbody) {
         tbody.innerHTML = '';

@@ -421,7 +421,6 @@ function initArbitrageTab() {
     renderArbitrageTab();
 }
 
-// === Η ΟΡΙΣΤΙΚΗ ΕΚΔΟΣΗ ΜΕ DUAL AXIS (BESS + MCP) ΠΟΥ ΕΙΧΑ ΞΕΧΑΣΕΙ ΝΑ ΒΑΛΩ! ===
 function renderArbitrageTab() {
     const select = document.getElementById('arbitrageDateSelect');
     if (!select) return;
@@ -447,19 +446,20 @@ function renderArbitrageTab() {
         return String(d).startsWith(selectedDate);
     });
 
-    const hoursBessKeys = [];
-    const hoursMcpKeys = [];
     const chartLabels = [];
     
+    // Φτιάχνουμε απλώς τα labels για το γράφημα (x-axis)
     for (let h = 1; h <= 24; h++) {
         let padHour = (h < 10 ? '0' + h : h) + ':00';
         chartLabels.push(padHour);
-        hoursBessKeys.push(padHour); 
-        hoursMcpKeys.push(h + ':00'); // Για το MCP που έχει κλειδιά 1:00, 2:00
     }
 
     if (mcpRow) {
-        dailyMcp = hoursMcpKeys.map(k => parseFloat(String(mcpRow[k]).replace(',', '.')) || 0);
+        // Διαβάζουμε το MCP ψάχνοντας το '1:00', '2:00' κλπ (όπως είναι στο excel σου)
+        for (let h = 1; h <= 24; h++) {
+            let k = h + ':00';
+            dailyMcp[h-1] = parseFloat(String(mcpRow[k]).replace(',', '.')) || 0;
+        }
     }
 
     const datasets = [];
@@ -477,11 +477,20 @@ function renderArbitrageTab() {
         let dailyRevenue = 0;
         let dailyCost = 0;
 
-        hoursBessKeys.forEach((hr, idx) => {
-            const val = parseFloat(String(row[hr]).replace(',', '.')) || 0;
+        for (let h = 1; h <= 24; h++) {
+            // Ο ΑΛΕΞΙΣΦΑΙΡΟΣ ΕΛΕΓΧΟΣ: Ψάχνει κάθε πιθανή μορφή ώρας
+            let key1 = h + ':00';                      // "1:00"
+            let key2 = (h < 10 ? '0' + h : h) + ':00'; // "01:00"
+            let key3 = key1 + ':00';                   // "1:00:00"
+            let key4 = key2 + ':00';                   // "01:00:00"
+            
+            // Παίρνει όποιο βρει να έχει δεδομένα, αλλιώς βάζει 0
+            let rawVal = row[key1] ?? row[key2] ?? row[key3] ?? row[key4] ?? 0;
+            
+            const val = parseFloat(String(rawVal).replace(',', '.')) || 0;
             dataPoints.push(val);
             
-            const currentMcp = dailyMcp[idx];
+            const currentMcp = dailyMcp[h-1];
 
             if (val < 0) {
                 let chargeVol = Math.abs(val);
@@ -492,7 +501,7 @@ function renderArbitrageTab() {
                 totalDischargeMWh += val;
                 dailyRevenue += (val * currentMcp);
             }
-        });
+        }
 
         const rte = totalChargeMWh > 0 ? (totalDischargeMWh / totalChargeMWh) * 100 : 0;
         let actualDailyPnl = dailyRevenue - dailyCost; 

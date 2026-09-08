@@ -604,8 +604,8 @@ function renderArbitrageTab() {
                 <td class="p-3">${item.charge.toFixed(2)}</td>
                 <td class="p-3">${item.discharge.toFixed(2)}</td>
                 <td class="p-3">${item.rte.toFixed(1)}%</td>
-                <td class="p-3 font-semibold ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${item.pnl.toLocaleString('el-GR', {style: 'currency', currency: 'EUR'})}</td>
-                <td class="p-3">${item.unitProfit.toFixed(2)} €/MWh</td>
+                <td class="p-3 font-semibold ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${item.pnl.toLocaleString('el-GR', {style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0})}</td>
+                <td class="p-3">${item.unitProfit.toFixed(0)} €/MWh</td>
             `;
             tbody.appendChild(tr);
         });

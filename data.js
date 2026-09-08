@@ -47,7 +47,7 @@ const i18n = {
         thCharge: "ΣΥΝΟΛΙΚΗ ΦΟΡΤΙΣΗ (MWH)",
         thDischarge: "ΣΥΝΟΛΙΚΗ ΑΠΟΦΟΡΤΙΣΗ (MWH)",
         thRte: "RTE (%)",
-        thPnl: "ΕΚΤΙΜΩΜΕΝΟ DAILY P&L (€)",
+        thPnl: "ΠΙΘΑΝΟ DAILY P&L (€)",
         thProfit: "UNIT PROFIT (€/MWH)"
     },
     en: {
@@ -93,7 +93,7 @@ const i18n = {
         thCharge: "TOTAL CHARGE (MWH)",
         thDischarge: "TOTAL DISCHARGE (MWH)",
         thRte: "RTE (%)",
-        thPnl: "ESTIMATED DAILY P&L (€)",
+        thPnl: "POTENTIAL DAILY P&L (€)",
         thProfit: "UNIT PROFIT (€/MWH)"
     }
 };

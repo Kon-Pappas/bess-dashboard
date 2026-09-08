@@ -9,6 +9,9 @@ let surplusStackedChartInst = null;
 let surplusCumulativeChartInst = null;
 let arbitrageDualChartInst = null;
 
+// Μεταβλητή για να θυμόμαστε ποια BESS είναι "απομονωμένη"
+let currentlyIsolatedBess = null;
+
 // ==========================================
 // HELPERS
 // ==========================================
@@ -64,6 +67,57 @@ function switchTab(tabName) {
         initArbitrageTab();
     }
 }
+
+// ==========================================
+// INTERACTIVE ISOLATION FOR ARBITRAGE
+// ==========================================
+function toggleBessIsolation(clickedUnit) {
+    if (!arbitrageDualChartInst) return;
+
+    const datasets = arbitrageDualChartInst.data.datasets;
+    
+    // Αν ξαναπατήσει την ήδη απομονωμένη, κάνουμε reset (τα δείχνουμε όλα)
+    if (currentlyIsolatedBess === clickedUnit) {
+        currentlyIsolatedBess = null;
+        
+        // Εμφάνιση όλων των datasets στο γράφημα
+        datasets.forEach((ds, idx) => {
+            arbitrageDualChartInst.setDatasetVisibility(idx, true);
+        });
+        
+        // Επαναφορά όλων των γραμμών του πίνακα στο 100% ορατότητα
+        document.querySelectorAll('#arbitrageTableBody tr').forEach(tr => {
+            tr.style.opacity = '1';
+        });
+
+    } else {
+        // Αλλιώς, απομονώνουμε τη συγκεκριμένη
+        currentlyIsolatedBess = clickedUnit;
+        
+        datasets.forEach((ds, idx) => {
+            if (ds.yAxisID === 'yMcp') {
+                // Η τιμή MCP μένει ΠΑΝΤΑ ανοιχτή
+                arbitrageDualChartInst.setDatasetVisibility(idx, true);
+            } else {
+                // Κρύβουμε όσες BESS ΔΕΝ είναι η επιλεγμένη
+                arbitrageDualChartInst.setDatasetVisibility(idx, ds.label === clickedUnit);
+            }
+        });
+
+        // "Ξεθωριάζουμε" τις άλλες γραμμές του πίνακα για έμφαση
+        document.querySelectorAll('#arbitrageTableBody tr').forEach(tr => {
+            if (tr.id === "row-" + clickedUnit.replace(/\s+/g, '-')) {
+                tr.style.opacity = '1';
+            } else {
+                tr.style.opacity = '0.3';
+            }
+        });
+    }
+    
+    // Ανανέωση γραφήματος
+    arbitrageDualChartInst.update();
+}
+
 
 // ==========================================
 // 1. DAILY DASHBOARD
@@ -422,6 +476,9 @@ function initArbitrageTab() {
 }
 
 function renderArbitrageTab() {
+    // Κάνουμε reset την απομονωμένη BESS κάθε φορά που αλλάζει η ημερομηνία
+    currentlyIsolatedBess = null; 
+
     const select = document.getElementById('arbitrageDateSelect');
     if (!select) return;
     
@@ -431,11 +488,11 @@ function renderArbitrageTab() {
 
     if (!selectedDate || !hourlyData || hourlyData.length === 0) return;
 
-    // Αναγνώριση γλώσσας
     const lang = typeof currentLang !== 'undefined' ? currentLang : 'el';
     const mcpLegendLabel = (lang === 'en') ? 'MCP Price (€/MWh)' : 'Τιμή MCP (€/MWh)';
     const yBessTitle = (lang === 'en') ? 'BESS Volume (MWh)' : 'Όγκος BESS (MWh)';
     const yMcpTitle = (lang === 'en') ? 'MCP Price (€/MWh)' : 'Τιμή MCP (€/MWh)';
+    const hoverTitle = (lang === 'en') ? 'Click to isolate this unit on the chart' : 'Κλικ για να απομονώσεις αυτή τη μονάδα στο γράφημα';
 
     const dayData = hourlyData.filter(item => {
         let d = item["Ημερομηνία"] || item["date"];
@@ -514,7 +571,8 @@ function renderArbitrageTab() {
             discharge: totalDischargeMWh,
             rte: rte,
             pnl: actualDailyPnl,
-            unitProfit: unitProfit
+            unitProfit: unitProfit,
+            color: colorPalette[colorIdx % colorPalette.length]
         };
 
         datasets.push({
@@ -531,7 +589,7 @@ function renderArbitrageTab() {
 
     if (mcpRow) {
         datasets.push({
-            label: mcpLegendLabel, // Δυναμική Μετάφραση!
+            label: mcpLegendLabel,
             data: dailyMcp,
             borderColor: '#eab308', 
             backgroundColor: '#eab308',
@@ -560,7 +618,7 @@ function renderArbitrageTab() {
                 y: { 
                     stacked: true, 
                     grid: { color: '#334155' }, 
-                    title: { display: true, text: yBessTitle }, // Δυναμική Μετάφραση!
+                    title: { display: true, text: yBessTitle },
                     position: 'left'
                 },
                 yMcp: {
@@ -568,7 +626,7 @@ function renderArbitrageTab() {
                     display: true,
                     position: 'right',
                     grid: { display: false },
-                    title: { display: true, text: yMcpTitle, color: '#eab308' }, // Δυναμική Μετάφραση!
+                    title: { display: true, text: yMcpTitle, color: '#eab308' },
                     ticks: { color: '#eab308' }
                 }
             },
@@ -598,9 +656,18 @@ function renderArbitrageTab() {
         Object.keys(pnlSummary).forEach(unit => {
             const item = pnlSummary[unit];
             const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-700/50 transition-colors";
+            
+            // Προσθήκη CSS Classes για Pointer, Hover εφέ, και ένα ID για την απομόνωση
+            tr.className = "hover:bg-slate-700/50 transition-all cursor-pointer group";
+            tr.id = "row-" + unit.replace(/\s+/g, '-');
+            tr.title = hoverTitle; // Tooltip όταν περνάει το ποντίκι
+            
+            // Η μαγεία του κλικ: καλεί τη συνάρτηση toggleBessIsolation
+            tr.onclick = () => toggleBessIsolation(unit);
+            
+            // Το όνομα της μονάδας (πρώτο <td>) παίρνει το χρώμα της γραμμής της στο γράφημα (στο hover)
             tr.innerHTML = `
-                <td class="p-3 font-medium text-white">${unit}</td>
+                <td class="p-3 font-bold text-slate-300 group-hover:text-white transition-colors" style="border-left: 4px solid transparent;" onmouseover="this.style.borderLeftColor='${item.color}'" onmouseout="this.style.borderLeftColor='transparent'">${unit}</td>
                 <td class="p-3">${item.charge.toFixed(2)}</td>
                 <td class="p-3">${item.discharge.toFixed(2)}</td>
                 <td class="p-3">${item.rte.toFixed(1)}%</td>

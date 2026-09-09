@@ -679,16 +679,20 @@ function renderArbitrageTab() {
 }
 
 // ==========================================
-// INITIALIZATION & LOADING SCREEN (ΝΕΟΣ ΚΩΔΙΚΑΣ)
+// INITIALIZATION & LOADING SCREEN
 // ==========================================
 window.addEventListener('load', () => {
-    // Μόλις κατέβει το data.js και φορτώσει όλη η σελίδα, εξαφανίζουμε το Loading Screen
+    
+    // 1. Αρχικοποιούμε το ταμπλό για να εμφανιστούν αμέσως τα γραφήματα
+    switchTab('daily'); 
+    
+    // 2. Εξαφανίζουμε το Loading Screen ομαλά
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
-        overlay.style.opacity = '0'; // Ξεκινάει το fade-out (0.5 δευτερόλεπτο)
+        overlay.style.opacity = '0'; // Ξεκινάει το fade-out
         
         setTimeout(() => {
-            overlay.style.display = 'none'; // Το αφαιρεί πλήρως μετά το οπτικό εφέ
+            overlay.style.display = 'none'; // Το αφαιρεί πλήρως μετά από μισό δευτερόλεπτο
         }, 500); 
     }
 });

@@ -695,5 +695,5 @@ window.addEventListener('load', () => {
                 overlay.style.display = 'none'; // Το αφαιρεί από την οθόνη
             }, 500); 
         }
-    }, 800); 
+    }, 2000); 
 });

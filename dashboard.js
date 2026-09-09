@@ -118,7 +118,6 @@ function toggleBessIsolation(clickedUnit) {
     arbitrageDualChartInst.update();
 }
 
-
 // ==========================================
 // 1. DAILY DASHBOARD
 // ==========================================
@@ -678,3 +677,18 @@ function renderArbitrageTab() {
         });
     }
 }
+
+// ==========================================
+// INITIALIZATION & LOADING SCREEN (ΝΕΟΣ ΚΩΔΙΚΑΣ)
+// ==========================================
+window.addEventListener('load', () => {
+    // Μόλις κατέβει το data.js και φορτώσει όλη η σελίδα, εξαφανίζουμε το Loading Screen
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0'; // Ξεκινάει το fade-out (0.5 δευτερόλεπτο)
+        
+        setTimeout(() => {
+            overlay.style.display = 'none'; // Το αφαιρεί πλήρως μετά το οπτικό εφέ
+        }, 500); 
+    }
+});

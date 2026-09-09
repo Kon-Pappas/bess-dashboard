@@ -4,47 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="pageTitle">Daily Greek BESS Market Analytics</title>
+    <!-- Το Tailwind φορτώνει κανονικά -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Ενσωματωμένο CSS για το Loading Screen -->
-    <style>
-        #loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #0f172a; /* Ίδιο με το bg-slate-900 του site σου */
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.5s ease-out; /* Ομαλό σβήσιμο */
-        }
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top: 4px solid #10b981; /* Πράσινο emerald-500 για να ταιριάζει */
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <!-- Το Chart.js φορτώνει στο παρασκήνιο (defer) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 flex flex-col justify-between">
 
-    <!-- Loading Overlay -->
-    <div id="loading-overlay">
-        <div class="spinner"></div>
+    <!-- 100% Tailwind Loading Overlay (Κανένα CSS) -->
+    <div id="loading-overlay" class="fixed inset-0 z-[9999] bg-slate-900 flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="w-12 h-12 border-4 border-white/10 border-t-emerald-500 rounded-full animate-spin mb-4"></div>
         <div class="text-white text-lg font-medium text-center">
-            Fetching market data...<br>
+            Fetching live market data...<br>
             <span class="text-sm text-slate-400">Please wait a few seconds</span>
         </div>
     </div>
@@ -270,6 +241,7 @@
         <p>Business Operations & Risk Management | Data Insights on Energy Transition & Grid Stability</p>
     </footer>
 
+    <!-- Αφήνουμε τα δικά σου αρχεία να φορτώσουν στο παρασκήνιο (defer) -->
     <script src="data.js" defer></script>
     <script src="dashboard.js" defer></script>
 

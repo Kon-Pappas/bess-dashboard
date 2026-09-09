@@ -695,5 +695,5 @@ window.addEventListener('load', () => {
                 overlay.style.display = 'none'; // Το κρύβει εντελώς
             }, 500); 
         }
-    }, 1600); 
+    }, 5000); 
 });

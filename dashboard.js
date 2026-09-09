@@ -76,35 +76,23 @@ function toggleBessIsolation(clickedUnit) {
 
     const datasets = arbitrageDualChartInst.data.datasets;
     
-    // Αν ξαναπατήσει την ήδη απομονωμένη, κάνουμε reset (τα δείχνουμε όλα)
     if (currentlyIsolatedBess === clickedUnit) {
         currentlyIsolatedBess = null;
-        
-        // Εμφάνιση όλων των datasets στο γράφημα
         datasets.forEach((ds, idx) => {
             arbitrageDualChartInst.setDatasetVisibility(idx, true);
         });
-        
-        // Επαναφορά όλων των γραμμών του πίνακα στο 100% ορατότητα
         document.querySelectorAll('#arbitrageTableBody tr').forEach(tr => {
             tr.style.opacity = '1';
         });
-
     } else {
-        // Αλλιώς, απομονώνουμε τη συγκεκριμένη
         currentlyIsolatedBess = clickedUnit;
-        
         datasets.forEach((ds, idx) => {
             if (ds.yAxisID === 'yMcp') {
-                // Η τιμή MCP μένει ΠΑΝΤΑ ανοιχτή
                 arbitrageDualChartInst.setDatasetVisibility(idx, true);
             } else {
-                // Κρύβουμε όσες BESS ΔΕΝ είναι η επιλεγμένη
                 arbitrageDualChartInst.setDatasetVisibility(idx, ds.label === clickedUnit);
             }
         });
-
-        // "Ξεθωριάζουμε" τις άλλες γραμμές του πίνακα για έμφαση
         document.querySelectorAll('#arbitrageTableBody tr').forEach(tr => {
             if (tr.id === "row-" + clickedUnit.replace(/\s+/g, '-')) {
                 tr.style.opacity = '1';
@@ -113,8 +101,6 @@ function toggleBessIsolation(clickedUnit) {
             }
         });
     }
-    
-    // Ανανέωση γραφήματος
     arbitrageDualChartInst.update();
 }
 
@@ -475,7 +461,6 @@ function initArbitrageTab() {
 }
 
 function renderArbitrageTab() {
-    // Κάνουμε reset την απομονωμένη BESS κάθε φορά που αλλάζει η ημερομηνία
     currentlyIsolatedBess = null; 
 
     const select = document.getElementById('arbitrageDateSelect');
@@ -656,15 +641,11 @@ function renderArbitrageTab() {
             const item = pnlSummary[unit];
             const tr = document.createElement('tr');
             
-            // Προσθήκη CSS Classes για Pointer, Hover εφέ, και ένα ID για την απομόνωση
             tr.className = "hover:bg-slate-700/50 transition-all cursor-pointer group";
             tr.id = "row-" + unit.replace(/\s+/g, '-');
-            tr.title = hoverTitle; // Tooltip όταν περνάει το ποντίκι
-            
-            // Η μαγεία του κλικ: καλεί τη συνάρτηση toggleBessIsolation
+            tr.title = hoverTitle;
             tr.onclick = () => toggleBessIsolation(unit);
             
-            // Το όνομα της μονάδας (πρώτο <td>) παίρνει το χρώμα της γραμμής της στο γράφημα (στο hover)
             tr.innerHTML = `
                 <td class="p-3 font-bold text-slate-300 group-hover:text-white transition-colors" style="border-left: 4px solid transparent;" onmouseover="this.style.borderLeftColor='${item.color}'" onmouseout="this.style.borderLeftColor='transparent'">${unit}</td>
                 <td class="p-3">${item.charge.toFixed(2)}</td>
@@ -679,21 +660,92 @@ function renderArbitrageTab() {
 }
 
 // ==========================================
-// INITIALIZATION & LOADING SCREEN 
+// INITIALIZATION & PROGRESS LOADING SCREEN (EXTENDED 9s)
 // ==========================================
 window.addEventListener('load', () => {
-    // 1. Ξεκινάμε τη βαριά φόρτωση ΑΜΕΣΩΣ (ενώ ο χρήστης βλέπει τον τροχό)
-    switchTab('daily'); 
-    
-    // 2. Περιμένουμε 1600ms (ή όσο χρειάζεται) ώστε να χτιστούν ΟΛΑ τα γραφήματα 
-    // στο background, και ΜΕΤΑ εξαφανίζουμε το Loading ομαλά.
+    const bar = document.getElementById('loading-progress-bar');
+    const pct = document.getElementById('loading-percentage');
+    const sub = document.getElementById('loading-subtitle');
+    const overlay = document.getElementById('loading-overlay');
+
+    function updateProgress(percent, text) {
+        if (bar) bar.style.width = percent + '%';
+        if (pct) pct.innerText = percent + '%';
+        if (sub) sub.innerText = text;
+    }
+
+    // Βήμα 1: Έναρξη & Ανάγνωση (1500ms)
+    updateProgress(15, 'Ανάγνωση αρχείων δεδομένων...');
+
     setTimeout(() => {
-        const overlay = document.getElementById('loading-overlay');
-        if (overlay) {
-            overlay.classList.add('opacity-0'); // Ομαλό fade-out
-            setTimeout(() => {
-                overlay.style.display = 'none'; // Το κρύβει εντελώς
-            }, 500); 
+        try {
+            // Βήμα 2: Φόρτωση ημερήσιας ανάλυσης (1200ms)
+            updateProgress(40, 'Υπολογισμός Ημερήσιας Ανάλυσης & KPI...');
+            switchTab('daily');
+        } catch (e) {
+            console.error(e);
         }
-    }, 5000); 
+
+        setTimeout(() => {
+            try {
+                // Βήμα 3: Μηνιαία & Surplus (2400ms)
+                updateProgress(70, 'Επεξεργασία Μηνιαίων & Δεδομένων Ευελιξίας...');
+                
+                const mSelect = document.getElementById('monthSelect');
+                if (mSelect && rawData && rawData.scada) {
+                    const monthsSet = new Set();
+                    rawData.scada.forEach(d => { if (d.date) monthsSet.add(d.date.substring(0, 7)); });
+                    const months = [...monthsSet].sort();
+                    mSelect.innerHTML = '';
+                    months.forEach(m => {
+                        let opt = document.createElement('option');
+                        opt.value = m; opt.innerText = m;
+                        mSelect.appendChild(opt);
+                    });
+                    if (months.length > 0) mSelect.value = months[months.length - 1];
+                }
+
+                const mSelectSurp = document.getElementById('monthSelectSurplus');
+                if (mSelectSurp && rawData && rawData.surplus) {
+                    const monthsSet = new Set();
+                    rawData.surplus.forEach(d => { if (d.date) monthsSet.add(d.date.substring(0, 7)); });
+                    const months = [...monthsSet].sort();
+                    mSelectSurp.innerHTML = '';
+                    months.forEach(m => {
+                        let opt = document.createElement('option');
+                        opt.value = m; opt.innerText = m;
+                        mSelectSurp.appendChild(opt);
+                    });
+                    if (months.length > 0) mSelectSurp.value = months[months.length - 1];
+                }
+            } catch (e) {
+                console.error(e);
+            }
+
+            setTimeout(() => {
+                try {
+                    // Βήμα 4: Το βαρύ Arbitrage & P&L (2400ms)
+                    updateProgress(90, 'Προετοιμασία Ωριαίου Arbitrage & P&L...');
+                    initArbitrageTab();
+                } catch (e) {
+                    console.error(e);
+                }
+
+                // Βήμα 5: Τελική Ολοκλήρωση (100%)
+                updateProgress(100, 'Το Dashboard είναι έτοιμο!');
+                
+                setTimeout(() => {
+                    if (overlay) {
+                        overlay.classList.add('opacity-0');
+                        setTimeout(() => {
+                            overlay.style.display = 'none';
+                        }, 500); 
+                    }
+                }, 1500); // Παύση στο 100%
+
+            }, 2400); 
+
+        }, 2400); 
+
+    }, 1500); 
 });

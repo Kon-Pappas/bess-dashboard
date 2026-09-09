@@ -682,18 +682,18 @@ function renderArbitrageTab() {
 // INITIALIZATION & LOADING SCREEN 
 // ==========================================
 window.addEventListener('load', () => {
-    // Δίνουμε μια μικρή ανάσα στον browser για να μη "σκαλώσει" στο animation του Tailwind
+    // 1. Ξεκινάμε τη βαριά φόρτωση ΑΜΕΣΩΣ (ενώ ο χρήστης βλέπει τον τροχό)
+    switchTab('daily'); 
+    
+    // 2. Περιμένουμε 1600ms (ή όσο χρειάζεται) ώστε να χτιστούν ΟΛΑ τα γραφήματα 
+    // στο background, και ΜΕΤΑ εξαφανίζουμε το Loading ομαλά.
     setTimeout(() => {
-        // 1. Ζωγραφίζουμε τα γραφήματα (εδώ γίνεται η βαριά δουλειά)
-        switchTab('daily'); 
-        
-        // 2. Εξαφανίζουμε το Loading Screen
         const overlay = document.getElementById('loading-overlay');
         if (overlay) {
-            overlay.classList.add('opacity-0'); // Το Tailwind αναλαμβάνει το σβήσιμο
+            overlay.classList.add('opacity-0'); // Ομαλό fade-out
             setTimeout(() => {
-                overlay.style.display = 'none'; // Το αφαιρεί από την οθόνη
+                overlay.style.display = 'none'; // Το κρύβει εντελώς
             }, 500); 
         }
-    }, 2000); 
+    }, 1600); 
 });

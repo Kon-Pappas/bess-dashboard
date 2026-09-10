@@ -645,10 +645,10 @@ function renderArbitrageTab() {
             let rteColorClass = "text-slate-300"; // Προεπιλογή: Άσπρο/Γκριζωπό
             let rteTooltip = "Φυσιολογικά επίπεδα απόδοσης (RTE).";
             
-            if (item.rte > 0 && item.rte <= 80) {
+            if (item.rte > 0 && item.rte <= 83) {
                 rteColorClass = "text-yellow-400 font-bold";
                 rteTooltip = "Χαμηλό RTE: Πιθανή διατήρηση αποθέματος (SoC) για χρήση την επόμενη ημέρα ή υψηλές ιδιοκαταναλώσεις.";
-            } else if (item.rte >= 94) {
+            } else if (item.rte >= 92) {
                 rteColorClass = "text-rose-500 font-bold";
                 rteTooltip = "Μη ρεαλιστικό RTE (>94%): Εκφόρτιση ενέργειας που είχε αποθηκευτεί χθες (SoC Carryover) ή σφάλμα SCADA.";
             } else if (item.rte === 0) {
@@ -697,7 +697,7 @@ window.addEventListener('load', () => {
         if (sub) sub.innerText = text;
     }
 
-    // Βήμα 1: Έναρξη & Ανάγνωση (1500ms)
+    // Βήμα 1: Έναρξη & Ανάγνωση (2000ms)
     updateProgress(15, 'Ανάγνωση αρχείων δεδομένων...');
 
     setTimeout(() => {
@@ -711,7 +711,7 @@ window.addEventListener('load', () => {
 
         setTimeout(() => {
             try {
-                // Βήμα 3: Μηνιαία & Surplus (2400ms)
+                // Βήμα 3: Μηνιαία & Surplus (2900ms)
                 updateProgress(70, 'Επεξεργασία Μηνιαίων & Δεδομένων Ευελιξίας...');
                 
                 const mSelect = document.getElementById('monthSelect');
@@ -747,7 +747,7 @@ window.addEventListener('load', () => {
 
             setTimeout(() => {
                 try {
-                    // Βήμα 4: Το βαρύ Arbitrage & P&L (2400ms)
+                    // Βήμα 4: Το βαρύ Arbitrage & P&L (2900ms)
                     updateProgress(90, 'Προετοιμασία Ωριαίου Arbitrage & P&L...');
                     initArbitrageTab();
                 } catch (e) {
@@ -764,11 +764,11 @@ window.addEventListener('load', () => {
                             overlay.style.display = 'none';
                         }, 500); 
                     }
-                }, 1500); // Παύση στο 100%
+                }, 2000); // Παύση στο 100%
 
-            }, 2400); 
+            }, 2900); 
 
-        }, 2400); 
+        }, 2900); 
 
     }, 1500); 
 });

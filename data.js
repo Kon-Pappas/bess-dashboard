@@ -1,7 +1,7 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbyZESmS6vPrmjQsa6ZfAsHFLhcL562KhyfS_39cEUcZJp3fA6li9iGZcnqOV-_346KS/exec";
 
 let rawData = { isp: [], scada: [], surplus: [], pump: [], bessHourly: [], mcpHourly: [] };
-let currentLang = 'el';
+let currentLang = 'en';
 
 const i18n = {
     el: {

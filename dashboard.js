@@ -650,7 +650,7 @@ function renderArbitrageTab() {
                 rteTooltip = "Χαμηλό RTE: Πιθανή διατήρηση αποθέματος (SoC) για χρήση την επόμενη ημέρα ή υψηλές ιδιοκαταναλώσεις.";
             } else if (item.rte >= 92) {
                 rteColorClass = "text-rose-500 font-bold";
-                rteTooltip = "Μη ρεαλιστικό RTE (>94%): Εκφόρτιση ενέργειας που είχε αποθηκευτεί χθες (SoC Carryover) ή σφάλμα SCADA.";
+                rteTooltip = "Μη ρεαλιστικό RTE: Εκφόρτιση ενέργειας που είχε αποθηκευτεί χθες (SoC Carryover) ή σφάλμα SCADA.";
             } else if (item.rte === 0) {
                 rteColorClass = "text-slate-500";
                 rteTooltip = "Μηδενική δραστηριότητα κύκλου.";

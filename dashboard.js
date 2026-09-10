@@ -641,19 +641,42 @@ function renderArbitrageTab() {
             const item = pnlSummary[unit];
             const tr = document.createElement('tr');
             
+            // --- ΝΕΑ ΛΟΓΙΚΗ RTE (Χρώματα & Tooltips) ---
+            let rteColorClass = "text-slate-300"; // Προεπιλογή: Άσπρο/Γκριζωπό
+            let rteTooltip = "Φυσιολογικά επίπεδα απόδοσης (RTE).";
+            
+            if (item.rte > 0 && item.rte <= 80) {
+                rteColorClass = "text-yellow-400 font-bold";
+                rteTooltip = "Χαμηλό RTE: Πιθανή διατήρηση αποθέματος (SoC) για χρήση την επόμενη ημέρα ή υψηλές ιδιοκαταναλώσεις.";
+            } else if (item.rte >= 94) {
+                rteColorClass = "text-rose-500 font-bold";
+                rteTooltip = "Μη ρεαλιστικό RTE (>94%): Εκφόρτιση ενέργειας που είχε αποθηκευτεί χθες (SoC Carryover) ή σφάλμα SCADA.";
+            } else if (item.rte === 0) {
+                rteColorClass = "text-slate-500";
+                rteTooltip = "Μηδενική δραστηριότητα κύκλου.";
+            }
+            // ---------------------------------------------
+            
             tr.className = "hover:bg-slate-700/50 transition-all cursor-pointer group";
             tr.id = "row-" + unit.replace(/\s+/g, '-');
-            tr.title = hoverTitle;
-            tr.onclick = () => toggleBessIsolation(unit);
             
             tr.innerHTML = `
-                <td class="p-3 font-bold text-slate-300 group-hover:text-white transition-colors" style="border-left: 4px solid transparent;" onmouseover="this.style.borderLeftColor='${item.color}'" onmouseout="this.style.borderLeftColor='transparent'">${unit}</td>
+                <td class="p-3 font-bold text-slate-300 group-hover:text-white transition-colors" title="${hoverTitle}" style="border-left: 4px solid transparent;" onmouseover="this.style.borderLeftColor='${item.color}'" onmouseout="this.style.borderLeftColor='transparent'">${unit}</td>
                 <td class="p-3">${item.charge.toFixed(2)}</td>
                 <td class="p-3">${item.discharge.toFixed(2)}</td>
-                <td class="p-3">${item.rte.toFixed(1)}%</td>
+                <td class="p-3">
+                    <span class="${rteColorClass} cursor-help border-b border-dotted border-slate-500" title="${rteTooltip}">
+                        ${item.rte.toFixed(1)}%
+                    </span>
+                </td>
                 <td class="p-3 font-semibold ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${item.pnl.toLocaleString('el-GR', {style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0})}</td>
                 <td class="p-3">${item.unitProfit.toFixed(0)} €/MWh</td>
             `;
+            
+            tr.onclick = (e) => {
+                toggleBessIsolation(unit);
+            };
+            
             tbody.appendChild(tr);
         });
     }

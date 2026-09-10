@@ -340,7 +340,7 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
     const ctxStacked = document.getElementById('surplusStackedChart').getContext('2d');
     if (surplusStackedChartInst) surplusStackedChartInst.destroy();
     
-    const lang = typeof currentLang !== 'undefined' ? currentLang : 'el';
+    const lang = typeof currentLang !== 'undefined' ? currentLang : 'en';
 
     surplusStackedChartInst = new Chart(ctxStacked, {
         type: 'bar',
@@ -414,20 +414,18 @@ function renderSurplusCharts(labels, dailyBess, dailyPump, dailySurplus, cumBess
 // 4. ARBITRAGE P&L & HOURLY OPERATIONS
 // ==========================================
 function initArbitrageTab() {
-    console.log("initArbitrageTab called!");
     const select = document.getElementById('arbitrageDateSelect');
     if (!select) return;
 
     const hourlyData = getHourlyData();
 
     if (!hourlyData || hourlyData.length === 0) {
-        console.warn("Τα δεδομένα δεν έχουν φορτωθεί ακόμα. Αναμένεται λήψη...");
-        select.innerHTML = '<option value="">Φόρτωση δεδομένων...</option>';
+        select.innerHTML = '<option value="">Loading data...</option>';
         setTimeout(initArbitrageTab, 1000);
         return;
     }
 
-    if (select.options.length <= 1 || select.options[0].text === "Φόρτωση δεδομένων...") {
+    if (select.options.length <= 1 || select.options[0].text === "Loading data..." || select.options[0].text === "Φόρτωση δεδομένων...") {
         const datesSet = new Set();
         
         hourlyData.forEach(item => {
@@ -443,7 +441,6 @@ function initArbitrageTab() {
         });
 
         const dates = [...datesSet].sort();
-        console.log("Unique Dates extracted for Arbitrage:", dates);
 
         select.innerHTML = '';
         dates.forEach(d => {
@@ -472,7 +469,7 @@ function renderArbitrageTab() {
 
     if (!selectedDate || !hourlyData || hourlyData.length === 0) return;
 
-    const lang = typeof currentLang !== 'undefined' ? currentLang : 'el';
+    const lang = typeof currentLang !== 'undefined' ? currentLang : 'en';
     const mcpLegendLabel = (lang === 'en') ? 'MCP Price (€/MWh)' : 'Τιμή MCP (€/MWh)';
     const yBessTitle = (lang === 'en') ? 'BESS Volume (MWh)' : 'Όγκος BESS (MWh)';
     const yMcpTitle = (lang === 'en') ? 'MCP Price (€/MWh)' : 'Τιμή MCP (€/MWh)';
@@ -641,19 +638,23 @@ function renderArbitrageTab() {
             const item = pnlSummary[unit];
             const tr = document.createElement('tr');
             
-            // --- ΝΕΑ ΛΟΓΙΚΗ RTE (Χρώματα & Tooltips) ---
-            let rteColorClass = "text-slate-300"; // Προεπιλογή: Άσπρο/Γκριζωπό
-            let rteTooltip = "Φυσιολογικά επίπεδα απόδοσης (RTE).";
+            // --- ΝΕΑ ΛΟΓΙΚΗ RTE (ΔΙΓΛΩΣΣΑ Χρώματα & Tooltips 83-92) ---
+            let rteColorClass = "text-slate-300"; 
+            let rteTooltip = (lang === 'en') ? "Normal RTE levels." : "Φυσιολογικά επίπεδα απόδοσης (RTE).";
             
-            if (item.rte > 0 && item.rte <= 83) {
+            if (item.rte > 0 && item.rte < 83) {
                 rteColorClass = "text-yellow-400 font-bold";
-                rteTooltip = "Χαμηλό RTE: Πιθανή διατήρηση αποθέματος (SoC) για χρήση την επόμενη ημέρα ή υψηλές ιδιοκαταναλώσεις.";
-            } else if (item.rte >= 92) {
+                rteTooltip = (lang === 'en') 
+                    ? "Low RTE (<83%): Possible SoC carryover for next day use or high auxiliary consumption." 
+                    : "Χαμηλό RTE (<83%): Πιθανή διατήρηση αποθέματος (SoC) για χρήση την επόμενη ημέρα ή υψηλές ιδιοκαταναλώσεις.";
+            } else if (item.rte > 92) {
                 rteColorClass = "text-rose-500 font-bold";
-                rteTooltip = "Μη ρεαλιστικό RTE: Εκφόρτιση ενέργειας που είχε αποθηκευτεί χθες (SoC Carryover) ή σφάλμα SCADA.";
+                rteTooltip = (lang === 'en') 
+                    ? "Unrealistic RTE (>92%): Discharging energy stored yesterday (SoC Carryover) or SCADA error." 
+                    : "Μη ρεαλιστικό RTE (>92%): Εκφόρτιση ενέργειας που είχε αποθηκευτεί χθες (SoC Carryover) ή σφάλμα SCADA.";
             } else if (item.rte === 0) {
                 rteColorClass = "text-slate-500";
-                rteTooltip = "Μηδενική δραστηριότητα κύκλου.";
+                rteTooltip = (lang === 'en') ? "Zero cycle activity." : "Μηδενική δραστηριότητα κύκλου.";
             }
             // ---------------------------------------------
             
@@ -697,13 +698,13 @@ window.addEventListener('load', () => {
         if (sub) sub.innerText = text;
     }
 
-    // Βήμα 1: Έναρξη & Ανάγνωση (2000ms)
-    updateProgress(15, 'Ανάγνωση αρχείων δεδομένων...');
+    // Βήμα 1: Έναρξη & Ανάγνωση (1500ms)
+    updateProgress(15, 'Reading data files...');
 
     setTimeout(() => {
         try {
             // Βήμα 2: Φόρτωση ημερήσιας ανάλυσης (1200ms)
-            updateProgress(40, 'Υπολογισμός Ημερήσιας Ανάλυσης & KPI...');
+            updateProgress(40, 'Calculating Daily Analytics & KPIs...');
             switchTab('daily');
         } catch (e) {
             console.error(e);
@@ -711,8 +712,8 @@ window.addEventListener('load', () => {
 
         setTimeout(() => {
             try {
-                // Βήμα 3: Μηνιαία & Surplus (2900ms)
-                updateProgress(70, 'Επεξεργασία Μηνιαίων & Δεδομένων Ευελιξίας...');
+                // Βήμα 3: Μηνιαία & Surplus (2400ms)
+                updateProgress(70, 'Processing Monthly & Flexibility Data...');
                 
                 const mSelect = document.getElementById('monthSelect');
                 if (mSelect && rawData && rawData.scada) {
@@ -747,15 +748,15 @@ window.addEventListener('load', () => {
 
             setTimeout(() => {
                 try {
-                    // Βήμα 4: Το βαρύ Arbitrage & P&L (2900ms)
-                    updateProgress(90, 'Προετοιμασία Ωριαίου Arbitrage & P&L...');
+                    // Βήμα 4: Το βαρύ Arbitrage & P&L (2400ms)
+                    updateProgress(90, 'Preparing Hourly Arbitrage & P&L...');
                     initArbitrageTab();
                 } catch (e) {
                     console.error(e);
                 }
 
                 // Βήμα 5: Τελική Ολοκλήρωση (100%)
-                updateProgress(100, 'Το Dashboard είναι έτοιμο!');
+                updateProgress(100, 'Dashboard is ready!');
                 
                 setTimeout(() => {
                     if (overlay) {
@@ -764,11 +765,11 @@ window.addEventListener('load', () => {
                             overlay.style.display = 'none';
                         }, 500); 
                     }
-                }, 2000); // Παύση στο 100%
+                }, 1500); // Παύση στο 100%
 
-            }, 2900); 
+            }, 2400); 
 
-        }, 2900); 
+        }, 2400); 
 
     }, 1500); 
 });

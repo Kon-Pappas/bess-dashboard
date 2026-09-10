@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,14 +9,14 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 flex flex-col justify-between">
 
-    <!-- Loading Overlay με Progress Bar & Percentage -->
+    <!-- Loading Overlay with Progress Bar & Percentage -->
     <div id="loading-overlay" class="fixed inset-0 z-[9999] bg-slate-900 flex flex-col items-center justify-center transition-opacity duration-500 px-4">
         <div class="w-16 h-16 border-4 border-slate-700 border-t-emerald-500 rounded-full animate-spin mb-6"></div>
         <div class="text-white text-xl font-semibold text-center mb-2" id="loading-title">
-            Φόρτωση Δεδομένων Αγοράς...
+            Loading Market Data...
         </div>
         <div class="text-sm text-slate-400 text-center mb-6" id="loading-subtitle">
-            Ανάγνωση αρχείων δεδομένων...
+            Reading data files...
         </div>
         
         <!-- Progress Bar Container -->
@@ -38,14 +38,15 @@
                     </div>
                     <p class="text-slate-400 text-sm mt-1" id="dataSourceText">Data source: IPTO (ADMIE) official ISP & SCADA files</p>
                     <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
-                        <div><span id="lastUpdateLabel">Τελευταία Ενημέρωση:</span> <strong id="lastUpdateVal" class="text-emerald-400">-</strong></div>
-                        <div><span id="nextUpdateLabel">Επόμενη Ενημέρωση:</span> <strong id="nextUpdateVal" class="text-blue-400">-</strong></div>
+                        <div><span id="lastUpdateLabel">Last Update:</span> <strong id="lastUpdateVal" class="text-emerald-400">-</strong></div>
+                        <div><span id="nextUpdateLabel">Next Update:</span> <strong id="nextUpdateVal" class="text-blue-400">-</strong></div>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
                     <div class="flex gap-2 bg-slate-800 border border-slate-700 rounded-lg p-1 text-xs font-bold">
-                        <button onclick="setLang('el')" id="btnGr" class="px-2 py-1 rounded bg-emerald-600 text-white transition">GR</button>
-                        <button onclick="setLang('en')" id="btnEn" class="px-2 py-1 rounded text-slate-400 hover:text-white transition">EN</button>
+                        <!-- Το EN ειναι ενεργό (πράσινο) και το GR ανενεργό -->
+                        <button onclick="setLang('el')" id="btnGr" class="px-2 py-1 rounded text-slate-400 hover:text-white transition">GR</button>
+                        <button onclick="setLang('en')" id="btnEn" class="px-2 py-1 rounded bg-emerald-600 text-white transition">EN</button>
                     </div>
                 </div>
             </div>
@@ -53,9 +54,9 @@
 
         <!-- TABS NAVIGATION -->
         <div class="flex space-x-6 border-b border-slate-800 pb-2 overflow-x-auto">
-            <button id="tabBtnDaily" onclick="switchTab('daily')" class="text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap">Ημερήσια Ανάλυση</button>
-            <button id="tabBtnMonthly" onclick="switchTab('monthly')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap">Μηνιαίος Αντίκτυπος</button>
-            <button id="tabBtnSurplus" onclick="switchTab('surplus')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap">Πλεόνασμα & Ευελιξία</button>
+            <button id="tabBtnDaily" onclick="switchTab('daily')" class="text-emerald-400 font-bold border-b-2 border-emerald-400 pb-2 px-2 transition whitespace-nowrap">Daily Analytics</button>
+            <button id="tabBtnMonthly" onclick="switchTab('monthly')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap">Monthly Impact</button>
+            <button id="tabBtnSurplus" onclick="switchTab('surplus')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap">Surplus & Flexibility</button>
             <button id="tabBtnArbitrage" onclick="switchTab('arbitrage')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap">Arbitrage P&L</button>
         </div>
 
@@ -65,27 +66,27 @@
         <div id="viewDaily" class="space-y-8 block">
             <div class="flex justify-end">
                 <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
-                    <label class="text-xs text-slate-300" id="dateLabel">Ημερομηνία:</label>
+                    <label class="text-xs text-slate-300" id="dateLabel">Date:</label>
                     <select id="dateSelect" onchange="updateDashboard()" class="bg-slate-900 border border-slate-600 text-slate-200 text-sm rounded p-1 outline-none"></select>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700">
-                    <h2 class="text-lg font-semibold text-slate-200 mb-4" id="dischargeTitle">Αποφόρτιση (Discharge) Ανά Μονάδα BESS (MWh)</h2>
+                    <h2 class="text-lg font-semibold text-slate-200 mb-4" id="dischargeTitle">Discharge Per BESS Unit (MWh)</h2>
                     <div class="relative h-80"><canvas id="dischargeChart"></canvas></div>
                 </div>
                 <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
-                    <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="totalDischargeLabel">Συνολικη Αποφορτιση</h3>
+                    <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="totalDischargeLabel">Total Discharge</h3>
                     <div class="space-y-6">
                         <div>
-                            <span class="block text-xs text-slate-500 mb-1" id="lblDispIsp">ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΣ (ISP)</span>
+                            <span class="block text-xs text-slate-500 mb-1" id="lblDispIsp">SCHEDULED (ISP)</span>
                             <span id="kpiDischargeIsp" class="text-4xl font-bold text-blue-400">0.00</span>
                             <span class="text-sm text-slate-500 block mt-1">GWh</span>
                         </div>
                         <div class="border-t border-slate-700 w-1/2 mx-auto"></div>
                         <div>
-                            <span class="block text-xs text-slate-500 mb-1" id="lblDispScada">ΠΡΑΓΜΑΤΙΚΗ (SCADA)</span>
+                            <span class="block text-xs text-slate-500 mb-1" id="lblDispScada">ACTUAL (SCADA)</span>
                             <span id="kpiDischargeScada" class="text-4xl font-bold text-emerald-400">0.00</span>
                             <span class="text-sm text-slate-500 block mt-1">GWh</span>
                         </div>
@@ -95,20 +96,20 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700">
-                    <h2 class="text-lg font-semibold text-slate-200 mb-4" id="chargeTitle">Φόρτιση (Charge) Ανά Μονάδα BESS (MWh)</h2>
+                    <h2 class="text-lg font-semibold text-slate-200 mb-4" id="chargeTitle">Charge Per BESS Unit (MWh)</h2>
                     <div class="relative h-80"><canvas id="chargeChart"></canvas></div>
                 </div>
                 <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
-                    <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="totalChargeLabel">Συνολικη Φορτιση</h3>
+                    <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="totalChargeLabel">Total Charge</h3>
                     <div class="space-y-6">
                         <div>
-                            <span class="block text-xs text-slate-500 mb-1" id="lblChgIsp">ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΣ (ISP)</span>
+                            <span class="block text-xs text-slate-500 mb-1" id="lblChgIsp">SCHEDULED (ISP)</span>
                             <span id="kpiChargeIsp" class="text-4xl font-bold text-purple-400">0.00</span>
                             <span class="text-sm text-slate-500 block mt-1">GWh</span>
                         </div>
                         <div class="border-t border-slate-700 w-1/2 mx-auto"></div>
                         <div>
-                            <span class="block text-xs text-slate-500 mb-1" id="lblChgScada">ΠΡΑΓΜΑΤΙΚΗ (SCADA)</span>
+                            <span class="block text-xs text-slate-500 mb-1" id="lblChgScada">ACTUAL (SCADA)</span>
                             <span id="kpiChargeScada" class="text-4xl font-bold text-orange-400">0.00</span>
                             <span class="text-sm text-slate-500 block mt-1">GWh</span>
                         </div>
@@ -138,30 +139,30 @@
         <div id="viewMonthly" class="space-y-8 hidden">
             <div class="flex justify-end">
                 <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
-                    <label class="text-xs text-slate-300" id="monthLabel">Μήνας:</label>
+                    <label class="text-xs text-slate-300" id="monthLabel">Month:</label>
                     <select id="monthSelect" onchange="updateMonthlyDashboard()" class="bg-slate-900 border border-slate-600 text-slate-200 text-sm rounded p-1 outline-none"></select>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700">
-                    <h2 class="text-lg font-semibold text-slate-200 mb-1" id="monthlyDischargeTitle">Πιθανή Υποκατάσταση Θερμικών Μονάδων (Λιγνήτης ή/και Φ. Αέριο) - (Αθροιστική Αποφόρτιση)</h2>
-                    <p class="text-xs text-slate-400 mb-4" id="monthlyDischargeSub">SCADA Data - Εξοικονόμηση θερμικής παραγωγής</p>
+                    <h2 class="text-lg font-semibold text-slate-200 mb-1" id="monthlyDischargeTitle">Potential Displaced Thermal Generation (Lignite/Gas) - (Cumulative Discharge)</h2>
+                    <p class="text-xs text-slate-400 mb-4" id="monthlyDischargeSub">SCADA Data - Avoided Thermal Generation</p>
                     <div class="relative h-80"><canvas id="monthlyDischargeChart"></canvas></div>
                 </div>
                 <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
-                    <h3 class="text-sm font-medium text-slate-400 mb-4 uppercase tracking-wider" id="kpiLabelDisplaced">Μηνιαια Υποκατασταση</h3>
+                    <h3 class="text-sm font-medium text-slate-400 mb-4 uppercase tracking-wider" id="kpiLabelDisplaced">Monthly Displaced</h3>
                     <span id="kpiMonthlyDischarge" class="text-4xl font-bold text-emerald-400">0.00</span>
                     <span class="text-sm text-slate-500 block mt-1">GWh</span>
                 </div>
 
                 <div class="lg:col-span-3 bg-slate-800/40 p-6 rounded-xl border border-slate-700 mt-6 lg:mt-0">
-                    <h2 class="text-lg font-semibold text-slate-200 mb-1" id="monthlyChargeTitle">Πιθανή Αποφυγή Περικοπών ΑΠΕ (Αθροιστική Φόρτιση)</h2>
-                    <p class="text-xs text-slate-400 mb-4" id="monthlyChargeSub">SCADA Data - Ενέργεια που αλλιώς θα περικόπτονταν (Curtailment)</p>
+                    <h2 class="text-lg font-semibold text-slate-200 mb-1" id="monthlyChargeTitle">Potential Avoided RES Curtailment (Cumulative Charge)</h2>
+                    <p class="text-xs text-slate-400 mb-4" id="monthlyChargeSub">SCADA Data - Energy saved from curtailment</p>
                     <div class="relative h-80"><canvas id="monthlyChargeChart"></canvas></div>
                 </div>
                 <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700 flex flex-col justify-center text-center mt-6 lg:mt-0">
-                    <h3 class="text-sm font-medium text-slate-400 mb-4 uppercase tracking-wider" id="kpiLabelAvoided">Μηνιαια Αποφυγη</h3>
+                    <h3 class="text-sm font-medium text-slate-400 mb-4 uppercase tracking-wider" id="kpiLabelAvoided">Monthly Avoided</h3>
                     <span id="kpiMonthlyCharge" class="text-4xl font-bold text-orange-400">0.00</span>
                     <span class="text-sm text-slate-500 block mt-1">GWh</span>
                 </div>
@@ -174,7 +175,7 @@
         <div id="viewSurplus" class="space-y-8 hidden">
             <div class="flex justify-end">
                 <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
-                    <label class="text-xs text-slate-300" id="monthLabelSurp">Μήνας:</label>
+                    <label class="text-xs text-slate-300" id="monthLabelSurp">Month:</label>
                     <select id="monthSelectSurplus" onchange="updateSurplusDashboard()" class="bg-slate-900 border border-slate-600 text-slate-200 text-sm rounded p-1 outline-none"></select>
                 </div>
             </div>
@@ -182,17 +183,17 @@
             <!-- Absolute Stacked Bar Chart -->
             <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
                 <div class="flex items-center gap-2 mb-1">
-                    <h2 class="text-lg font-semibold text-slate-200" id="surplusStackedTitle">Ημερήσιο Πλεόνασμα & Απορρόφηση Ευελιξίας (GWh)</h2>
-                    <span class="cursor-help text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded-full border border-slate-700 hover:border-emerald-500 transition" id="surplusBadge" title="Το % απορρόφησης υπολογίζεται επί του Θεωρητικού Αρχικού Πλεονάσματος (Surplus + BESS Charge)">[?]</span>
+                    <h2 class="text-lg font-semibold text-slate-200" id="surplusStackedTitle">Daily Energy Surplus & Flexibility Absorption (GWh)</h2>
+                    <span class="cursor-help text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded-full border border-slate-700 hover:border-emerald-500 transition" id="surplusBadge" title="">[?]</span>
                 </div>
-                <p class="text-xs text-slate-400 mb-4" id="surplusStackedSub">Απόλυτες τιμές. Τις μέρες χωρίς κόκκινη μπάρα (Surplus = 0) η φόρτιση αφορά καθαρά λειτουργία αγοράς (arbitrage).</p>
+                <p class="text-xs text-slate-400 mb-4" id="surplusStackedSub">Absolute values. Days with no red bar (Surplus = 0) indicate purely market-driven arbitrage charging.</p>
                 <div class="relative h-96"><canvas id="surplusStackedChart"></canvas></div>
             </div>
 
             <!-- Cumulative Line Chart -->
             <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
-                <h2 class="text-lg font-semibold text-slate-200 mb-1" id="surplusCumulativeTitle">Αθροιστική Εξέλιξη (Cumulative BESS vs Surplus)</h2>
-                <p class="text-xs text-slate-400 mb-4" id="surplusCumulativeSub">Σύγκριση της αθροιστικής φόρτισης SCADA με το αθροιστικό υπολειπόμενο ISP Surplus</p>
+                <h2 class="text-lg font-semibold text-slate-200 mb-1" id="surplusCumulativeTitle">Cumulative Flexibility Evolution (BESS & PUMP vs Surplus)</h2>
+                <p class="text-xs text-slate-400 mb-4" id="surplusCumulativeSub">Comparison of cumulative SCADA charging (Batteries + Pumped Hydro) vs cumulative residual ISP Surplus</p>
                 <div class="relative h-80"><canvas id="surplusCumulativeChart"></canvas></div>
             </div>
         </div>
@@ -202,33 +203,33 @@
         <!-- ============================================== -->
         <div id="viewArbitrage" class="space-y-8 hidden">
             <div class="flex justify-between items-center">
-                <h2 id="arbitrageMainTitle" class="text-xl font-bold text-emerald-400">Arbitrage P&L & Ωριαίο Προφίλ Λειτουργίας</h2>
+                <h2 id="arbitrageMainTitle" class="text-xl font-bold text-emerald-400">Arbitrage P&L & Hourly Operation Profile</h2>
                 <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
-                    <label id="arbitrageDateLabel" class="text-xs text-slate-300">Ημερομηνία:</label>
+                    <label id="arbitrageDateLabel" class="text-xs text-slate-300">Date:</label>
                     <select id="arbitrageDateSelect" onchange="renderArbitrageTab()" class="bg-slate-900 border border-slate-600 text-slate-200 text-sm rounded p-1 outline-none"></select>
                 </div>
             </div>
 
             <!-- Dual-Axis / Stacked Bar Chart -->
             <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
-                <h3 id="arbitrageChartTitle" class="text-lg font-semibold text-slate-200 mb-1">Ωριαία Κίνηση BESS ανά Μονάδα (MWh)</h3>
-                <p id="arbitrageChartSub" class="text-xs text-slate-400 mb-4">Αρνητικές τιμές = Φόρτιση, Θετικές τιμές = Αποφόρτιση</p>
+                <h3 id="arbitrageChartTitle" class="text-lg font-semibold text-slate-200 mb-1">Hourly BESS Operation per Unit (MWh)</h3>
+                <p id="arbitrageChartSub" class="text-xs text-slate-400 mb-4">Negative values = Charging, Positive values = Discharging</p>
                 <div class="relative h-96"><canvas id="arbitrageDualChart"></canvas></div>
             </div>
 
             <!-- Financial Performance Table -->
             <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700">
-                <h3 id="arbitrageTableTitle" class="text-lg font-semibold text-slate-200 mb-4">Οικονομική Απόδοση & Arbitrage (Ημέρας)</h3>
+                <h3 id="arbitrageTableTitle" class="text-lg font-semibold text-slate-200 mb-4">Daily Financial Performance & Arbitrage</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-slate-300">
                         <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
                             <tr>
-                                <th id="thUnit" class="p-3">Μονάδα BESS</th>
-                                <th id="thCharge" class="p-3">Συνολική Φόρτιση (MWh)</th>
-                                <th id="thDischarge" class="p-3">Συνολική Αποφόρτιση (MWh)</th>
+                                <th id="thUnit" class="p-3">BESS UNIT</th>
+                                <th id="thCharge" class="p-3">TOTAL CHARGE (MWH)</th>
+                                <th id="thDischarge" class="p-3">TOTAL DISCHARGE (MWH)</th>
                                 <th id="thRte" class="p-3">RTE (%)</th>
-                                <th id="thPnl" class="p-3">Εκτιμώμενο Daily P&L (€)</th>
-                                <th id="thProfit" class="p-3">Unit Profit (€/MWh)</th>
+                                <th id="thPnl" class="p-3">POTENTIAL DAILY P&L (€)</th>
+                                <th id="thProfit" class="p-3">UNIT PROFIT (€/MWH)</th>
                             </tr>
                         </thead>
                         <tbody id="arbitrageTableBody" class="divide-y divide-slate-700">
@@ -242,7 +243,7 @@
     </div>
 
     <!-- Footer -->
-    <footer class="text-center text-slate-500 text-xs border-t border-slate-800 pt-6 mt-12 space-y-1">
+    <footer class="text-center text-slate-500 text-xs border-t border-slate-800 pt-6 mt-12 space-y-1 pb-8">
         <p class="font-semibold text-slate-400">Konstantinos Pappas | Energy Market Analyst</p>
         <p>Business Operations & Risk Management | Data Insights on Energy Transition & Grid Stability</p>
     </footer>

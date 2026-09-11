@@ -9,7 +9,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 flex flex-col justify-between">
 
-    <!-- Loading Overlay with Progress Bar & Percentage -->
+    <!-- Loading Overlay -->
     <div id="loading-overlay" class="fixed inset-0 z-[9999] bg-slate-900 flex flex-col items-center justify-center transition-opacity duration-500 px-4">
         <div class="w-16 h-16 border-4 border-slate-700 border-t-emerald-500 rounded-full animate-spin mb-6"></div>
         <div class="text-white text-xl font-semibold text-center mb-2" id="loading-title">
@@ -42,9 +42,14 @@
                         <div><span id="nextUpdateLabel">Next Update:</span> <strong id="nextUpdateVal" class="text-blue-400">-</strong></div>
                     </div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <div class="flex gap-2 bg-slate-800 border border-slate-700 rounded-lg p-1 text-xs font-bold">
-                        <!-- Το EN ειναι ενεργό (πράσινο) και το GR ανενεργό -->
+                <div class="flex items-center gap-3">
+                    <!-- Κουμπί Μεθοδολογίας -->
+                    <button onclick="openMethodologyModal()" class="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-emerald-400 transition bg-slate-800/80 px-3 py-1.5 rounded border border-slate-700 hover:border-emerald-500 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <span id="btnMethodologyText">Methodology & Assumptions</span>
+                    </button>
+                    <!-- Γλώσσες (Το EN είναι πράσινο/ενεργό) -->
+                    <div class="flex gap-2 bg-slate-800 border border-slate-700 rounded-lg p-1 text-xs font-bold shadow-sm">
                         <button onclick="setLang('el')" id="btnGr" class="px-2 py-1 rounded text-slate-400 hover:text-white transition">GR</button>
                         <button onclick="setLang('en')" id="btnEn" class="px-2 py-1 rounded bg-emerald-600 text-white transition">EN</button>
                     </div>
@@ -60,9 +65,7 @@
             <button id="tabBtnArbitrage" onclick="switchTab('arbitrage')" class="text-slate-500 hover:text-emerald-300 pb-2 px-2 transition whitespace-nowrap">Arbitrage P&L</button>
         </div>
 
-        <!-- ============================================== -->
         <!-- VIEW 1: DAILY ANALYTICS -->
-        <!-- ============================================== -->
         <div id="viewDaily" class="space-y-8 block">
             <div class="flex justify-end">
                 <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
@@ -121,21 +124,19 @@
                 <h3 class="text-sm font-medium text-slate-400 mb-6 uppercase tracking-wider" id="rteLabel">Round Trip Efficiency (RTE - Total BESS)</h3>
                 <div class="flex justify-around items-center">
                     <div>
-                        <span class="block text-xs text-slate-500 mb-1">ISP RTE</span>
+                        <span class="block text-xs text-slate-500 mb-1" id="lblRteIsp">ISP RTE</span>
                         <span id="kpiRteIsp" class="text-3xl font-bold text-slate-200">0.00%</span>
                     </div>
                     <div class="h-12 w-px bg-slate-600"></div>
                     <div>
-                        <span class="block text-xs text-slate-500 mb-1">SCADA RTE</span>
+                        <span class="block text-xs text-slate-500 mb-1" id="lblRteScada">SCADA RTE</span>
                         <span id="kpiRteScada" class="text-3xl font-bold text-emerald-400">0.00%</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ============================================== -->
         <!-- VIEW 2: MONTHLY IMPACT -->
-        <!-- ============================================== -->
         <div id="viewMonthly" class="space-y-8 hidden">
             <div class="flex justify-end">
                 <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
@@ -169,9 +170,7 @@
             </div>
         </div>
 
-        <!-- ============================================== -->
         <!-- VIEW 3: SURPLUS & FLEXIBILITY -->
-        <!-- ============================================== -->
         <div id="viewSurplus" class="space-y-8 hidden">
             <div class="flex justify-end">
                 <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
@@ -198,9 +197,7 @@
             </div>
         </div>
 
-        <!-- ============================================== -->
         <!-- VIEW 4: ARBITRAGE P&L & HOURLY OPERATIONS -->
-        <!-- ============================================== -->
         <div id="viewArbitrage" class="space-y-8 hidden">
             <div class="flex justify-between items-center">
                 <h2 id="arbitrageMainTitle" class="text-xl font-bold text-emerald-400">Arbitrage P&L & Hourly Operation Profile</h2>
@@ -247,6 +244,46 @@
         <p class="font-semibold text-slate-400">Konstantinos Pappas | Energy Market Analyst</p>
         <p>Business Operations & Risk Management | Data Insights on Energy Transition & Grid Stability</p>
     </footer>
+
+    <!-- MODAL: METHODOLOGY & ASSUMPTIONS -->
+    <div id="methodologyModal" class="fixed inset-0 z-[10000] bg-black/80 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl transform scale-95 transition-transform duration-300" id="modalContent">
+            
+            <div class="flex justify-between items-center border-b border-slate-700 pb-4 mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-emerald-500/20 p-2 rounded-lg text-emerald-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-100" id="modalTitle">Methodology & Core Assumptions</h2>
+                </div>
+                <button onclick="closeMethodologyModal()" class="text-slate-500 hover:text-rose-400 transition text-3xl leading-none">&times;</button>
+            </div>
+            
+            <div class="text-sm text-slate-300 leading-relaxed" id="modalBody"></div>
+            
+            <div class="mt-6 pt-4 border-t border-slate-800 text-right">
+                <button onclick="closeMethodologyModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-600 transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script για το Modal -->
+    <script>
+        function openMethodologyModal() {
+            const modal = document.getElementById('methodologyModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('modalContent').classList.remove('scale-95');
+            }, 10);
+        }
+        function closeMethodologyModal() {
+            const modal = document.getElementById('methodologyModal');
+            modal.classList.add('opacity-0');
+            document.getElementById('modalContent').classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+    </script>
 
     <script src="data.js" defer></script>
     <script src="dashboard.js" defer></script>

@@ -1,7 +1,7 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbyZESmS6vPrmjQsa6ZfAsHFLhcL562KhyfS_39cEUcZJp3fA6li9iGZcnqOV-_346KS/exec";
 
 let rawData = { isp: [], scada: [], surplus: [], pump: [], bessHourly: [], mcpHourly: [] };
-let currentLang = 'en';
+let currentLang = 'en'; // Εδώ ορίζουμε τα Αγγλικά ως προεπιλογή
 
 const i18n = {
     el: {
@@ -16,6 +16,17 @@ const i18n = {
         tabMonthly: "Μηνιαίος Αντίκτυπος",
         tabSurplus: "Πλεόνασμα & Ευελιξία",
         tabArbitrage: "Arbitrage P&L",
+        btnMethodology: "Μεθοδολογία & Παραδοχές",
+        modalTitle: "Μεθοδολογία & Βασικές Παραδοχές",
+        modalBody: `
+            <p class="mb-3">Το παρόν Dashboard αποτελεί ένα ανεξάρτητο εργαλείο παρακολούθησης και ανάλυσης της δραστηριότητας των μονάδων Αποθήκευσης Ενέργειας (BESS) στην Ελληνική Αγορά, βασισμένο σε ανοιχτά δεδομένα.</p>
+            <ul class="list-disc pl-5 space-y-2 mb-4 text-slate-400">
+                <li><strong class="text-slate-200">Πηγές Δεδομένων:</strong> Τα δεδομένα αντλούνται καθημερινά από τα επίσημα αρχεία του ΑΔΜΗΕ (ISP Results & System Realization SCADA) και του ENTSO-E (Day-Ahead Market Prices).</li>
+                <li><strong class="text-slate-200">Οικονομικό Μοντέλο (P&L):</strong> Η εκτίμηση εσόδων (Arbitrage) αφορά <strong>αποκλειστικά τη λειτουργία στην Αγορά Επόμενης Ημέρας (DAM)</strong>. Ως price-takers, τα συστήματα θεωρείται ότι αγοράζουν και πωλούν στην Τιμή Εκκαθάρισης Αγοράς (MCP). <em>Δεν συμπεριλαμβάνονται</em> τα έσοδα από την Αγορά Εξισορρόπησης (Balancing Market), Επικουρικές Υπηρεσίες (FCR, aFRR) ή μηχανισμούς ισχύος.</li>
+                <li><strong class="text-slate-200">Απόδοση Κύκλου (RTE):</strong> Υπολογίζεται σε ημερήσια βάση (AC-to-AC) από τα δεδομένα SCADA. Ακραίες τιμές (π.χ. >92% ή <83%) οφείλονται συχνά στο φαινόμενο <em>Inter-day SoC Carryover</em>, όπου η μπαταρία διατηρεί απόθεμα ενέργειας για να το εγχύσει την επόμενη μέρα, εμφανίζοντας τεχνητά αλλοιωμένο ημερήσιο κλάσμα.</li>
+                <li><strong class="text-slate-200">Περιβαλλοντικός Αντίκτυπος:</strong> Οι μετρικές μηνιαίας υποκατάστασης είναι θεωρητικές. Βασίζονται στην υπόθεση ότι κάθε παραγόμενη MWh από BESS υποκαθιστά ακριβότερη και ρυπογόνο θερμική παραγωγή (Φυσικό Αέριο/Λιγνίτη), ενώ κάθε MWh φόρτισης αφορά δυνητική απορρόφηση πλεονάσματος ΑΠΕ που αλλιώς θα περικόπτονταν.</li>
+            </ul>
+        `,
         // Daily
         dischargeTitle: "Αποφόρτιση (Discharge) Ανά Μονάδα BESS (MWh)",
         totalDischarge: "Συνολική Αποφόρτιση",
@@ -62,6 +73,17 @@ const i18n = {
         tabMonthly: "Monthly Impact",
         tabSurplus: "Surplus & Flexibility",
         tabArbitrage: "Arbitrage P&L",
+        btnMethodology: "Methodology & Assumptions",
+        modalTitle: "Methodology & Core Assumptions",
+        modalBody: `
+            <p class="mb-3">This Dashboard serves as an independent tool for monitoring and analyzing Battery Energy Storage Systems (BESS) activity in the Greek Energy Market, based entirely on open data.</p>
+            <ul class="list-disc pl-5 space-y-2 mb-4 text-slate-400">
+                <li><strong class="text-slate-200">Data Sources:</strong> Data is fetched daily from IPTO's (ADMIE) official reports (ISP Results & System Realization SCADA) and ENTSO-E (Day-Ahead Market Prices).</li>
+                <li><strong class="text-slate-200">Financial Model (P&L):</strong> The estimated Arbitrage revenue is based <strong>strictly on the Day-Ahead Market (DAM)</strong>. Assuming a price-taker behavior, units charge/discharge at the Market Clearing Price (MCP). <em>Revenues from the Balancing Market, Ancillary Services (FCR, aFRR), or Capacity Mechanisms are entirely excluded.</em></li>
+                <li><strong class="text-slate-200">Round Trip Efficiency (RTE):</strong> Calculated on a daily AC-to-AC basis from SCADA telemetry. Extreme outliers (e.g., >92% or <83%) are typically caused by the <em>Inter-day SoC Carryover</em> effect, where a battery holds state-of-charge to inject on a subsequent day, artificially skewing the daily ratio.</li>
+                <li><strong class="text-slate-200">Environmental Impact:</strong> Monthly displacement metrics are theoretical. They rely on the assumption that BESS discharge displaces expensive/polluting thermal generation (Gas/Lignite), while BESS charging absorbs surplus RES generation that would otherwise face curtailment.</li>
+            </ul>
+        `,
         // Daily
         dischargeTitle: "Discharge Per BESS Unit (MWh)",
         totalDischarge: "Total Discharge",
@@ -111,6 +133,17 @@ function setLang(lang) {
     document.getElementById('monthLabel').innerText = t.monthLabel;
     document.getElementById('monthLabelSurp').innerText = t.monthLabel;
     
+    // Κουμπί Μεθοδολογίας
+    if(document.getElementById('btnMethodologyText')) {
+        document.getElementById('btnMethodologyText').innerText = t.btnMethodology;
+    }
+    if(document.getElementById('modalTitle')) {
+        document.getElementById('modalTitle').innerText = t.modalTitle;
+    }
+    if(document.getElementById('modalBody')) {
+        document.getElementById('modalBody').innerHTML = t.modalBody;
+    }
+
     // Tabs
     document.getElementById('tabBtnDaily').innerText = t.tabDaily;
     document.getElementById('tabBtnMonthly').innerText = t.tabMonthly;
@@ -167,7 +200,7 @@ function setLang(lang) {
     if (typeof updateDashboard === "function") updateDashboard();
     if (typeof updateMonthlyDashboard === "function") updateMonthlyDashboard();
     if (typeof updateSurplusDashboard === "function") updateSurplusDashboard();
-    if (typeof renderArbitrageTab === "function") renderArbitrageTab(); // Για να μεταφράζει και τον άξονα στο γράφημα!
+    if (typeof renderArbitrageTab === "function") renderArbitrageTab(); 
 }
 
 function switchTab(tabId) {

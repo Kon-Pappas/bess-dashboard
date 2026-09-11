@@ -638,7 +638,7 @@ function renderArbitrageTab() {
             const item = pnlSummary[unit];
             const tr = document.createElement('tr');
             
-            // --- ΝΕΑ ΛΟΓΙΚΗ RTE (ΔΙΓΛΩΣΣΑ Χρώματα & Tooltips 83-92) ---
+            // --- ΛΟΓΙΚΗ RTE (ΔΙΓΛΩΣΣΑ Χρώματα & Tooltips 83-92) ---
             let rteColorClass = "text-slate-300"; 
             let rteTooltip = (lang === 'en') ? "Normal RTE levels." : "Φυσιολογικά επίπεδα απόδοσης (RTE).";
             
@@ -656,7 +656,6 @@ function renderArbitrageTab() {
                 rteColorClass = "text-slate-500";
                 rteTooltip = (lang === 'en') ? "Zero cycle activity." : "Μηδενική δραστηριότητα κύκλου.";
             }
-            // ---------------------------------------------
             
             tr.className = "hover:bg-slate-700/50 transition-all cursor-pointer group";
             tr.id = "row-" + unit.replace(/\s+/g, '-');
@@ -684,7 +683,7 @@ function renderArbitrageTab() {
 }
 
 // ==========================================
-// INITIALIZATION & PROGRESS LOADING SCREEN (EXTENDED 9s)
+// INITIALIZATION & PROGRESS LOADING SCREEN 
 // ==========================================
 window.addEventListener('load', () => {
     const bar = document.getElementById('loading-progress-bar');
@@ -698,12 +697,10 @@ window.addEventListener('load', () => {
         if (sub) sub.innerText = text;
     }
 
-    // Βήμα 1: Έναρξη & Ανάγνωση (1500ms)
     updateProgress(15, 'Reading data files...');
 
     setTimeout(() => {
         try {
-            // Βήμα 2: Φόρτωση ημερήσιας ανάλυσης (1200ms)
             updateProgress(40, 'Calculating Daily Analytics & KPIs...');
             switchTab('daily');
         } catch (e) {
@@ -712,7 +709,6 @@ window.addEventListener('load', () => {
 
         setTimeout(() => {
             try {
-                // Βήμα 3: Μηνιαία & Surplus (2400ms)
                 updateProgress(70, 'Processing Monthly & Flexibility Data...');
                 
                 const mSelect = document.getElementById('monthSelect');
@@ -748,14 +744,12 @@ window.addEventListener('load', () => {
 
             setTimeout(() => {
                 try {
-                    // Βήμα 4: Το βαρύ Arbitrage & P&L (2400ms)
                     updateProgress(90, 'Preparing Hourly Arbitrage & P&L...');
                     initArbitrageTab();
                 } catch (e) {
                     console.error(e);
                 }
 
-                // Βήμα 5: Τελική Ολοκλήρωση (100%)
                 updateProgress(100, 'Dashboard is ready!');
                 
                 setTimeout(() => {
@@ -765,7 +759,7 @@ window.addEventListener('load', () => {
                             overlay.style.display = 'none';
                         }, 500); 
                     }
-                }, 1500); // Παύση στο 100%
+                }, 1500); 
 
             }, 2400); 
 
